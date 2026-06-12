@@ -115,6 +115,28 @@ Edita `OLLAMA_MODELS` en `.env` o ejecuta directamente:
 docker exec -it script-lab-ollama ollama pull mistral
 ```
 
+### Modelos cloud vs locales
+
+| Tipo | Ejemplo | Requisito |
+| --- | --- | --- |
+| **Local** | `llama3.2`, `qwen2.5:3b` | Solo descargar con `ollama pull` |
+| **Cloud** | `gpt-oss:20b-cloud` | Cuenta en [ollama.com](https://ollama.com) + `ollama signin` |
+
+Si usas modelos **`*-cloud`**, el listado (`/api/tags`) funciona pero el chat devuelve **401 Unauthorized** hasta autenticarte:
+
+```bash
+docker exec -it script-lab-ollama ollama signin
+```
+
+Sigue el enlace en el terminal, inicia sesión en ollama.com y vuelve a probar en la app.
+
+Para Docker sin cuenta cloud, usa modelos locales en `.env`:
+
+```bash
+OLLAMA_MODELS=llama3.2 qwen2.5:3b
+docker compose --profile setup run --rm ollama-models
+```
+
 ### Notas
 
 - Los **datos de proyectos** siguen guardándose en el navegador (IndexedDB), no en Docker.
