@@ -108,6 +108,11 @@ class SettingsController extends GetxController {
     await settings.saveSettings();
   }
 
+  Future<void> setThinkMode(String mode) async {
+    settings.settings.value.thinkMode = mode;
+    await settings.saveSettings();
+  }
+
   Future<void> setWordsPerMinute(int wpm) async {
     settings.settings.value.wordsPerMinute = wpm;
     await settings.saveSettings();

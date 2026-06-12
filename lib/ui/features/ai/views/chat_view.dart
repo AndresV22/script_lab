@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 
+import '../../../../core/constants/ai_options.dart';
 import '../../../../core/services/ollama_service.dart';
+import '../../../../core/services/settings_service.dart';
 import '../../../../core/widgets/empty_state.dart';
 import '../../../../core/widgets/ollama_model_dropdown.dart';
 import '../controller/chat_controller.dart';
@@ -75,6 +77,7 @@ class _MessageList extends StatelessWidget {
   Widget build(BuildContext context) {
     return Obx(() {
       final streaming = controller.streamingText.value;
+      final streamingThinking = controller.streamingThinking.value;
       final hasStreaming = controller.isStreaming.value;
       if (controller.messages.isEmpty && !hasStreaming) {
         return const EmptyState(
@@ -95,7 +98,8 @@ class _MessageList extends StatelessWidget {
             _MessageBubble(
               message: ChatMessage(
                 role: 'assistant',
-                content: streaming.isEmpty ? '…' : streaming,
+                content: streaming,
+                thinking: streamingThinking,
               ),
               streaming: true,
             ),
@@ -115,6 +119,15 @@ class _MessageBubble extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final isUser = message.isUser;
+    final thinkEnabled = AiThinkMode.ollamaValue(
+          SettingsService.to.settings.value.thinkMode,
+        ) !=
+        null;
+    final showThinking = !isUser &&
+        (message.hasThinking ||
+            (streaming && message.content.trim().isEmpty && thinkEnabled));
+    final showContent = message.content.trim().isNotEmpty;
+
     return Align(
       alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
       child: Container(
@@ -133,23 +146,132 @@ class _MessageBubble extends StatelessWidget {
           ),
         ),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            SelectableText(
-              message.content,
-              style: const TextStyle(fontSize: 13.5, height: 1.5),
-            ),
-            if (streaming)
+            if (showThinking)
+              _ThinkingPanel(
+                thinking: message.thinking,
+                streaming: streaming && !showContent,
+              ),
+            if (showContent)
+              SelectableText(
+                message.content,
+                style: const TextStyle(fontSize: 13.5, height: 1.5),
+              )
+            else if (streaming && !showThinking)
+              Text(
+                '…',
+                style: TextStyle(
+                  fontSize: 13.5,
+                  color: scheme.onSurfaceVariant,
+                ),
+              ),
+            if (streaming && showContent)
               Padding(
                 padding: const EdgeInsets.only(top: 8),
                 child: SizedBox(
                   width: 12,
                   height: 12,
                   child: CircularProgressIndicator(
-                      strokeWidth: 2, color: scheme.onSurfaceVariant),
+                    strokeWidth: 2,
+                    color: scheme.onSurfaceVariant,
+                  ),
                 ),
               ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ThinkingPanel extends StatefulWidget {
+  final String thinking;
+  final bool streaming;
+
+  const _ThinkingPanel({
+    required this.thinking,
+    required this.streaming,
+  });
+
+  @override
+  State<_ThinkingPanel> createState() => _ThinkingPanelState();
+}
+
+class _ThinkingPanelState extends State<_ThinkingPanel> {
+  var _expanded = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Material(
+        color: scheme.surface.withValues(alpha: 0.65),
+        borderRadius: BorderRadius.circular(10),
+        child: InkWell(
+          onTap: () => setState(() => _expanded = !_expanded),
+          borderRadius: BorderRadius.circular(10),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Row(
+                  children: [
+                    Icon(
+                      _expanded
+                          ? Icons.expand_less
+                          : Icons.psychology_outlined,
+                      size: 17,
+                      color: scheme.primary,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        widget.streaming ? 'Pensando…' : 'Razonamiento',
+                        style: TextStyle(
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w600,
+                          color: scheme.onSurface,
+                        ),
+                      ),
+                    ),
+                    if (widget.streaming)
+                      SizedBox(
+                        width: 12,
+                        height: 12,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: scheme.primary,
+                        ),
+                      )
+                    else
+                      Icon(
+                        _expanded ? Icons.expand_less : Icons.expand_more,
+                        size: 18,
+                        color: scheme.onSurfaceVariant,
+                      ),
+                  ],
+                ),
+                if (_expanded) ...[
+                  const SizedBox(height: 8),
+                  SelectableText(
+                    widget.thinking.isEmpty
+                        ? 'Esperando razonamiento…'
+                        : widget.thinking,
+                    style: TextStyle(
+                      fontSize: 12,
+                      height: 1.55,
+                      color: scheme.onSurfaceVariant,
+                      fontFamily: 'monospace',
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
         ),
       ),
     );
@@ -163,11 +285,38 @@ class _Composer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+
     return Padding(
       padding: const EdgeInsets.fromLTRB(28, 4, 28, 20),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
+          Obx(() {
+            SettingsService.to.settings.value;
+            final thinkOn = controller.thinkEnabled;
+            return PopupMenuButton<_ChatComposerOption>(
+              tooltip: 'Opciones del chat',
+              position: PopupMenuPosition.over,
+              icon: Icon(
+                Icons.tune,
+                color: thinkOn ? scheme.primary : scheme.onSurfaceVariant,
+              ),
+              onSelected: (option) {
+                if (option == _ChatComposerOption.thinking) {
+                  controller.toggleThinking();
+                }
+              },
+              itemBuilder: (context) => [
+                CheckedPopupMenuItem(
+                  value: _ChatComposerOption.thinking,
+                  checked: thinkOn,
+                  child: const Text('Razonamiento'),
+                ),
+              ],
+            );
+          }),
+          const SizedBox(width: 6),
           Expanded(
             child: CallbackShortcuts(
               bindings: {
@@ -203,3 +352,5 @@ class _Composer extends StatelessWidget {
     );
   }
 }
+
+enum _ChatComposerOption { thinking }

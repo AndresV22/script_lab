@@ -6,6 +6,8 @@ import 'package:http/http.dart' as http;
 
 import 'http/create_client_io.dart'
     if (dart.library.js_interop) 'http/create_client_web.dart';
+import '../constants/ai_options.dart';
+import '../models/ollama_chat_chunk.dart';
 import 'settings_service.dart';
 
 enum OllamaStatus { unknown, checking, connected, disconnected }
@@ -70,10 +72,13 @@ class OllamaService extends GetxService {
   }
 
   /// Envía un chat de un solo turno a Ollama y emite la respuesta en streaming.
+  /// [thinking] solo debe activarse en el chat del proyecto; sugerencias,
+  /// asistente y estructuras no usan razonamiento.
   Stream<String> chat({
     required String model,
     required String system,
     required String prompt,
+    bool thinking = false,
   }) =>
       chatWithHistory(
         model: model,
@@ -81,14 +86,31 @@ class OllamaService extends GetxService {
         messages: [
           {'role': 'user', 'content': prompt},
         ],
+        thinking: thinking,
       );
 
   /// Envía un chat con historial completo a Ollama y emite la respuesta
   /// en streaming. [messages] son mapas {'role', 'content'}.
+  /// Solo emite el contenido final; el razonamiento (thinking) se descarta.
   Stream<String> chatWithHistory({
     required String model,
     required String system,
     required List<Map<String, String>> messages,
+    bool thinking = false,
+  }) =>
+      chatWithHistoryChunks(
+        model: model,
+        system: system,
+        messages: messages,
+        thinking: thinking,
+      ).where((chunk) => chunk.hasContent).map((chunk) => chunk.content!);
+
+  /// Emite thinking y content por separado (para el chat del proyecto).
+  Stream<OllamaChatChunk> chatWithHistoryChunks({
+    required String model,
+    required String system,
+    required List<Map<String, String>> messages,
+    bool thinking = false,
   }) async* {
     if (model.isEmpty) {
       throw OllamaException(
@@ -96,16 +118,22 @@ class OllamaService extends GetxService {
     }
     final client = createHttpClient();
     try {
+      final body = <String, dynamic>{
+        'model': model,
+        'stream': true,
+        'messages': [
+          if (system.isNotEmpty) {'role': 'system', 'content': system},
+          ...messages,
+        ],
+      };
+      if (thinking) {
+        final think = _thinkParameter();
+        if (think != null) body['think'] = think;
+      }
+
       final request = http.Request('POST', Uri.parse('$baseUrl/api/chat'))
         ..headers['Content-Type'] = 'application/json'
-        ..body = jsonEncode({
-          'model': model,
-          'stream': true,
-          'messages': [
-            if (system.isNotEmpty) {'role': 'system', 'content': system},
-            ...messages,
-          ],
-        });
+        ..body = jsonEncode(body);
       final response = await client.send(request);
       if (response.statusCode != 200) {
         final body = await response.stream.bytesToString();
@@ -120,12 +148,24 @@ class OllamaService extends GetxService {
         if (data['error'] != null) {
           throw OllamaException(data['error'].toString());
         }
-        final content = (data['message'] as Map?)?['content'] as String?;
-        if (content != null && content.isNotEmpty) yield content;
+        final message = data['message'] as Map?;
+        final thinking = message?['thinking'] as String?;
+        final content = message?['content'] as String?;
+        if (thinking != null && thinking.isNotEmpty) {
+          yield OllamaChatChunk(thinking: thinking);
+        }
+        if (content != null && content.isNotEmpty) {
+          yield OllamaChatChunk(content: content);
+        }
         if (data['done'] == true) break;
       }
     } finally {
       client.close();
     }
+  }
+
+  Object? _thinkParameter() {
+    final mode = SettingsService.to.settings.value.thinkMode;
+    return AiThinkMode.ollamaValue(mode);
   }
 }

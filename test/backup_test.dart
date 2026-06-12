@@ -150,6 +150,7 @@ void main() {
       final settings = AppSettings(
         ollamaUrl: 'http://otra:11434',
         defaultModel: 'llama3',
+        thinkMode: 'medium',
         themeMode: 'dark',
         wordsPerMinute: 150,
         projectsViewMode: 'list',
@@ -160,6 +161,7 @@ void main() {
           AppSettings.fromBackupJson(roundTrip(settings.toBackupJson()));
       expect(restoredSettings.ollamaUrl, 'http://otra:11434');
       expect(restoredSettings.defaultModel, 'llama3');
+      expect(restoredSettings.thinkMode, 'medium');
       expect(restoredSettings.themeMode, 'dark');
       expect(restoredSettings.wordsPerMinute, 150);
       expect(restoredSettings.projectsViewMode, 'list');

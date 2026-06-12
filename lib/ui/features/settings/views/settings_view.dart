@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
+import '../../../../core/constants/ai_options.dart';
 import '../../../../core/extensions/date_extensions.dart';
 import '../../../../core/extensions/string_extensions.dart';
 import '../../../../core/helpers/text_stats.dart';
@@ -184,6 +185,34 @@ class _OllamaCard extends StatelessWidget {
                 value: current,
                 models: ollama.models,
                 onChanged: controller.setDefaultModel,
+              ),
+            );
+          }),
+          const SizedBox(height: 14),
+          Obx(() {
+            controller.settings.settings.value;
+            final thinkMode = controller.settings.settings.value.thinkMode;
+            return LabeledField(
+              label: 'Thinking (razonamiento)',
+              helper:
+                  'Activa el razonamiento previo en modelos compatibles. '
+                  'Usa «Activado» para qwen3/deepseek-r1; niveles bajo/medio/alto '
+                  'para gpt-oss. Las respuestas pueden tardar más.',
+              child: DropdownButtonFormField<String>(
+                initialValue: AiThinkMode.values.contains(thinkMode)
+                    ? thinkMode
+                    : AiThinkMode.off,
+                isExpanded: true,
+                items: [
+                  for (final mode in AiThinkMode.values)
+                    DropdownMenuItem(
+                      value: mode,
+                      child: Text(AiThinkMode.label(mode)),
+                    ),
+                ],
+                onChanged: (value) {
+                  if (value != null) controller.setThinkMode(value);
+                },
               ),
             );
           }),

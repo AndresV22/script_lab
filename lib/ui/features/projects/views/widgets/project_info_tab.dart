@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
+import '../../../../../core/widgets/copy_field_suffix.dart';
 import '../../../../../core/widgets/editable_chips.dart';
 import '../../../../../core/widgets/labeled_field.dart';
 import '../../../../../core/widgets/markdown_notes_field.dart';
@@ -35,17 +36,13 @@ class ProjectInfoTab extends StatelessWidget {
                       label: 'Tema del video',
                       child: TextField(
                         controller: controller.topicCtrl,
-                        decoration: const InputDecoration(
-                            hintText: '¿De qué trata este video?'),
+                        decoration: const InputDecoration(hintText: '¿De qué trata este video?'),
                       ),
                     ),
                     const SizedBox(height: 18),
                     const LabeledField(
                       label: 'Estado del proyecto',
-                      child: Align(
-                        alignment: Alignment.centerLeft,
-                        child: StatusSelector(),
-                      ),
+                      child: Align(alignment: Alignment.centerLeft, child: StatusSelector()),
                     ),
                   ],
                 ),
@@ -61,17 +58,18 @@ class ProjectInfoTab extends StatelessWidget {
                     children: [
                       LabeledField(
                         label: 'Título tentativo',
-                        child: TextField(
+                        child: TextFieldWithCopy(
                           controller: controller.titleCtrl,
-                          decoration: const InputDecoration(
-                              hintText: 'El título sobre el que trabajas'),
+                          getCopyText: () => controller.titleCtrl.text,
+                          copyTooltip: 'Copiar título',
+                          copySnackbarMessage: 'Título copiado al portapapeles',
+                          decoration: const InputDecoration(hintText: 'El título sobre el que trabajas'),
                         ),
                       ),
                       const SizedBox(height: 18),
                       LabeledField(
                         label: 'Alternativas de título',
-                        helper:
-                            'Haz clic en una alternativa para convertirla en el título tentativo.',
+                        helper: 'Haz clic en una alternativa para convertirla en el título tentativo.',
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
@@ -82,28 +80,17 @@ class ProjectInfoTab extends StatelessWidget {
                                   spacing: 8,
                                   runSpacing: 8,
                                   children: [
-                                    for (var i = 0;
-                                        i <
-                                            controller
-                                                .project.altTitles.length;
-                                        i++)
+                                    for (var i = 0; i < controller.project.altTitles.length; i++)
                                       InputChip(
-                                        label: Text(
-                                            controller.project.altTitles[i]),
-                                        onPressed: () =>
-                                            controller.promoteAltTitle(i),
-                                        onDeleted: () =>
-                                            controller.removeAltTitle(i),
-                                        deleteIcon: const Icon(Icons.close,
-                                            size: 14),
+                                        label: Text(controller.project.altTitles[i]),
+                                        onPressed: () => controller.promoteAltTitle(i),
+                                        onDeleted: () => controller.removeAltTitle(i),
+                                        deleteIcon: const Icon(Icons.close, size: 14),
                                       ),
                                   ],
                                 ),
                               ),
-                            _AddInline(
-                              hint: 'Añadir alternativa de título…',
-                              onAdd: controller.addAltTitle,
-                            ),
+                            _AddInline(hint: 'Añadir alternativa de título…', onAdd: controller.addAltTitle),
                           ],
                         ),
                       ),
@@ -123,12 +110,14 @@ class ProjectInfoTab extends StatelessWidget {
               _SectionCard(
                 title: 'Descripción del video',
                 action: _AiGenerateButton(task: AiTask.description),
-                child: TextField(
+                child: TextFieldWithCopy(
                   controller: controller.descriptionCtrl,
                   minLines: 4,
                   maxLines: 10,
-                  decoration: const InputDecoration(
-                      hintText: 'Texto que acompañará al video en YouTube…'),
+                  getCopyText: () => controller.descriptionCtrl.text,
+                  copyTooltip: 'Copiar descripción',
+                  copySnackbarMessage: 'Descripción copiada al portapapeles',
+                  decoration: const InputDecoration(hintText: 'Texto que acompañará al video en YouTube…'),
                 ),
               ),
               const SizedBox(height: 16),
@@ -143,6 +132,9 @@ class ProjectInfoTab extends StatelessWidget {
                     onAdd: controller.addTag,
                     onRemove: controller.removeTag,
                     addOnComma: true,
+                    getCopyText: () => controller.project.tags.join(', '),
+                    copyTooltip: 'Copiar etiquetas',
+                    copySnackbarMessage: 'Etiquetas copiadas al portapapeles',
                   );
                 }),
               ),
@@ -152,11 +144,10 @@ class ProjectInfoTab extends StatelessWidget {
                 action: _AiGenerateButton(task: AiTask.notes),
                 child: MarkdownNotesField(
                   controller: controller.notesCtrl,
+                  enableCopy: true,
                   minLines: 5,
                   maxLines: 14,
-                  decoration: const InputDecoration(
-                    hintText: 'Espacio libre para ideas, referencias…',
-                  ),
+                  decoration: const InputDecoration(hintText: 'Espacio libre para ideas, referencias…'),
                 ),
               ),
               const SizedBox(height: 28),
@@ -173,11 +164,7 @@ class _SectionCard extends StatelessWidget {
   final Widget? action;
   final Widget child;
 
-  const _SectionCard({
-    required this.title,
-    this.action,
-    required this.child,
-  });
+  const _SectionCard({required this.title, this.action, required this.child});
 
   @override
   Widget build(BuildContext context) {
@@ -192,10 +179,7 @@ class _SectionCard extends StatelessWidget {
                 Expanded(
                   child: Text(
                     title,
-                    style: Theme.of(context)
-                        .textTheme
-                        .titleSmall
-                        ?.copyWith(fontWeight: FontWeight.w700),
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
                   ),
                 ),
                 ?action,
@@ -224,19 +208,9 @@ class _AiGenerateButton extends StatelessWidget {
       return TextButton.icon(
         onPressed: busy ? null : () => ai.launchMetadataTask(task),
         icon: busy
-            ? SizedBox(
-                width: 14,
-                height: 14,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  color: scheme.primary,
-                ),
-              )
+            ? SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: scheme.primary))
             : Icon(Icons.auto_awesome, size: 15, color: scheme.primary),
-        label: Text(
-          'Generar con IA',
-          style: TextStyle(fontSize: 12.5, color: scheme.primary),
-        ),
+        label: Text('Generar con IA', style: TextStyle(fontSize: 12.5, color: scheme.primary)),
       );
     });
   }
@@ -248,22 +222,16 @@ class _TitlesAiMenu extends StatelessWidget {
     final ai = Get.find<AiController>();
     final scheme = Theme.of(context).colorScheme;
     return Obx(() {
-      final busy = ai.isRunning.value &&
-          (ai.currentTask.value == AiTask.titles ||
-              ai.currentTask.value == AiTask.tentativeTitle);
+      final busy =
+          ai.isRunning.value &&
+          (ai.currentTask.value == AiTask.titles || ai.currentTask.value == AiTask.tentativeTitle);
       return PopupMenuButton<AiTask>(
         tooltip: 'Generar con IA',
         enabled: !busy,
         onSelected: ai.launchMetadataTask,
         itemBuilder: (_) => [
-          const PopupMenuItem(
-            value: AiTask.tentativeTitle,
-            child: Text('Generar título tentativo'),
-          ),
-          const PopupMenuItem(
-            value: AiTask.titles,
-            child: Text('Generar alternativas'),
-          ),
+          const PopupMenuItem(value: AiTask.tentativeTitle, child: Text('Generar título tentativo')),
+          const PopupMenuItem(value: AiTask.titles, child: Text('Generar alternativas')),
         ],
         child: IgnorePointer(
           child: TextButton.icon(
@@ -272,16 +240,10 @@ class _TitlesAiMenu extends StatelessWidget {
                 ? SizedBox(
                     width: 14,
                     height: 14,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: scheme.primary,
-                    ),
+                    child: CircularProgressIndicator(strokeWidth: 2, color: scheme.primary),
                   )
                 : Icon(Icons.auto_awesome, size: 15, color: scheme.primary),
-            label: Text(
-              'Generar con IA',
-              style: TextStyle(fontSize: 12.5, color: scheme.primary),
-            ),
+            label: Text('Generar con IA', style: TextStyle(fontSize: 12.5, color: scheme.primary)),
           ),
         ),
       );
@@ -339,8 +301,7 @@ class _ThumbnailsSection extends StatelessWidget {
           label: 'Miniatura tentativa',
           child: project.thumbnail.isEmpty
               ? OutlinedButton.icon(
-                  onPressed: () =>
-                      controller.pickThumbnail(asTentative: true),
+                  onPressed: () => controller.pickThumbnail(asTentative: true),
                   icon: const Icon(Icons.image_outlined, size: 18),
                   label: const Text('Subir miniatura principal'),
                 )
@@ -348,12 +309,7 @@ class _ThumbnailsSection extends StatelessWidget {
                   children: [
                     ClipRRect(
                       borderRadius: BorderRadius.circular(10),
-                      child: Image.memory(
-                        base64Decode(project.thumbnail),
-                        width: 320,
-                        height: 180,
-                        fit: BoxFit.cover,
-                      ),
+                      child: Image.memory(base64Decode(project.thumbnail), width: 320, height: 180, fit: BoxFit.cover),
                     ),
                     Positioned(
                       top: 6,
@@ -363,8 +319,7 @@ class _ThumbnailsSection extends StatelessWidget {
                           _ThumbAction(
                             icon: Icons.sync,
                             tooltip: 'Reemplazar',
-                            onTap: () =>
-                                controller.pickThumbnail(asTentative: true),
+                            onTap: () => controller.pickThumbnail(asTentative: true),
                           ),
                           const SizedBox(width: 6),
                           _ThumbAction(
@@ -381,8 +336,7 @@ class _ThumbnailsSection extends StatelessWidget {
         const SizedBox(height: 18),
         LabeledField(
           label: 'Alternativas de miniatura',
-          helper:
-              'Pasa el cursor sobre una alternativa para promoverla o eliminarla.',
+          helper: 'Pasa el cursor sobre una alternativa para promoverla o eliminarla.',
           child: Wrap(
             spacing: 10,
             runSpacing: 10,
@@ -413,8 +367,7 @@ class _ThumbnailsSection extends StatelessWidget {
                           _ThumbAction(
                             icon: Icons.delete_outline,
                             tooltip: 'Eliminar',
-                            onTap: () =>
-                                controller.removeThumbnail(altIndex: i),
+                            onTap: () => controller.removeThumbnail(altIndex: i),
                           ),
                         ],
                       ),
@@ -425,10 +378,8 @@ class _ThumbnailsSection extends StatelessWidget {
                 width: 160,
                 height: 90,
                 child: OutlinedButton(
-                  onPressed: () =>
-                      controller.pickThumbnail(asTentative: false),
-                  child: Icon(Icons.add_photo_alternate_outlined,
-                      color: scheme.onSurfaceVariant),
+                  onPressed: () => controller.pickThumbnail(asTentative: false),
+                  child: Icon(Icons.add_photo_alternate_outlined, color: scheme.onSurfaceVariant),
                 ),
               ),
             ],
@@ -444,11 +395,7 @@ class _ThumbAction extends StatelessWidget {
   final String tooltip;
   final VoidCallback onTap;
 
-  const _ThumbAction({
-    required this.icon,
-    required this.tooltip,
-    required this.onTap,
-  });
+  const _ThumbAction({required this.icon, required this.tooltip, required this.onTap});
 
   @override
   Widget build(BuildContext context) {

@@ -1,10 +1,14 @@
 import 'package:hive_ce/hive.dart';
 
 import '../../../../core/constants/app_constants.dart';
+import '../../../../core/constants/ai_options.dart';
 
 class AppSettings extends HiveObject {
   String ollamaUrl;
   String defaultModel;
+
+  /// Modo thinking de Ollama: off | on | low | medium | high
+  String thinkMode;
 
   /// 'system' | 'light' | 'dark'
   String themeMode;
@@ -22,6 +26,7 @@ class AppSettings extends HiveObject {
   AppSettings({
     this.ollamaUrl = AppConstants.defaultOllamaUrl,
     this.defaultModel = '',
+    this.thinkMode = AiThinkMode.off,
     this.themeMode = 'system',
     this.wordsPerMinute = AppConstants.defaultWordsPerMinute,
     this.projectsViewMode = 'grid',
@@ -32,6 +37,7 @@ class AppSettings extends HiveObject {
   Map<String, dynamic> toBackupJson() => {
         'ollamaUrl': ollamaUrl,
         'defaultModel': defaultModel,
+        'thinkMode': thinkMode,
         'themeMode': themeMode,
         'wordsPerMinute': wordsPerMinute,
         'projectsViewMode': projectsViewMode,
@@ -43,6 +49,7 @@ class AppSettings extends HiveObject {
         ollamaUrl:
             (json['ollamaUrl'] as String?) ?? AppConstants.defaultOllamaUrl,
         defaultModel: (json['defaultModel'] as String?) ?? '',
+        thinkMode: (json['thinkMode'] as String?) ?? AiThinkMode.off,
         themeMode: (json['themeMode'] as String?) ?? 'system',
         wordsPerMinute: (json['wordsPerMinute'] as num?)?.toInt() ??
             AppConstants.defaultWordsPerMinute,

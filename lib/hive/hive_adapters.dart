@@ -1,6 +1,7 @@
 import 'package:hive_ce/hive.dart';
 
 import '../core/constants/app_constants.dart';
+import '../core/constants/ai_options.dart';
 import '../ui/features/ai/models/chat_message.dart';
 import '../ui/features/projects/enums/project_status.dart';
 import '../ui/features/suggestions/enums/suggestion_type.dart';

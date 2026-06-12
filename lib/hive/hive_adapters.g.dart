@@ -369,6 +369,7 @@ class AppSettingsAdapter extends TypeAdapter<AppSettings> {
           ? AppConstants.defaultOllamaUrl
           : fields[0] as String,
       defaultModel: fields[1] == null ? '' : fields[1] as String,
+      thinkMode: fields[7] == null ? AiThinkMode.off : fields[7] as String,
       themeMode: fields[2] == null ? 'system' : fields[2] as String,
       wordsPerMinute: fields[3] == null
           ? AppConstants.defaultWordsPerMinute
@@ -382,7 +383,7 @@ class AppSettingsAdapter extends TypeAdapter<AppSettings> {
   @override
   void write(BinaryWriter writer, AppSettings obj) {
     writer
-      ..writeByte(7)
+      ..writeByte(8)
       ..writeByte(0)
       ..write(obj.ollamaUrl)
       ..writeByte(1)
@@ -396,7 +397,9 @@ class AppSettingsAdapter extends TypeAdapter<AppSettings> {
       ..writeByte(5)
       ..write(obj.structuresViewMode)
       ..writeByte(6)
-      ..write(obj.cardSize);
+      ..write(obj.cardSize)
+      ..writeByte(7)
+      ..write(obj.thinkMode);
   }
 
   @override
@@ -558,6 +561,7 @@ class ChatMessageAdapter extends TypeAdapter<ChatMessage> {
     return ChatMessage(
       role: fields[0] as String,
       content: fields[1] as String,
+      thinking: fields[3] == null ? '' : fields[3] as String,
       timestamp: fields[2] as DateTime?,
     );
   }
@@ -565,13 +569,15 @@ class ChatMessageAdapter extends TypeAdapter<ChatMessage> {
   @override
   void write(BinaryWriter writer, ChatMessage obj) {
     writer
-      ..writeByte(3)
+      ..writeByte(4)
       ..writeByte(0)
       ..write(obj.role)
       ..writeByte(1)
       ..write(obj.content)
       ..writeByte(2)
-      ..write(obj.timestamp);
+      ..write(obj.timestamp)
+      ..writeByte(3)
+      ..write(obj.thinking);
   }
 
   @override

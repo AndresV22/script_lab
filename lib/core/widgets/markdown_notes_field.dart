@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 
+import 'copy_field_suffix.dart';
+
 /// Campo de notas con vista previa Markdown y modo edición.
 class MarkdownNotesField extends StatefulWidget {
   final TextEditingController controller;
   final InputDecoration? decoration;
   final int minLines;
   final int maxLines;
+  final bool enableCopy;
 
   const MarkdownNotesField({
     super.key,
@@ -14,6 +17,7 @@ class MarkdownNotesField extends StatefulWidget {
     this.decoration,
     this.minLines = 5,
     this.maxLines = 14,
+    this.enableCopy = false,
   });
 
   @override
@@ -48,9 +52,26 @@ class _MarkdownNotesFieldState extends State<MarkdownNotesField> {
     );
   }
 
+  CopyFieldSuffix? get _copyButton => widget.enableCopy
+      ? CopyFieldSuffix(
+          getText: () => widget.controller.text,
+          tooltip: 'Copiar notas',
+          snackbarMessage: 'Notas copiadas al portapapeles',
+        )
+      : null;
+
+  InputDecoration _editDecoration() {
+    final base = widget.decoration ?? const InputDecoration();
+    if (_copyButton == null) return base;
+    return base.copyWith(
+      contentPadding: const EdgeInsets.fromLTRB(12, 12, 44, 12),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final copyButton = _copyButton;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -89,21 +110,23 @@ class _MarkdownNotesFieldState extends State<MarkdownNotesField> {
             final text = widget.controller.text;
 
             if (editing) {
-              return TextField(
+              final field = TextField(
                 controller: widget.controller,
                 minLines: widget.minLines,
                 maxLines: widget.maxLines,
-                decoration: widget.decoration,
+                decoration: _editDecoration(),
               );
+              if (copyButton == null) return field;
+              return CopyFieldOverlay(copyButton: copyButton, child: field);
             }
 
             if (text.trim().isEmpty) {
-              return InkWell(
+              final emptyField = InkWell(
                 onTap: () => setState(() => editing = true),
                 borderRadius: BorderRadius.circular(8),
                 child: Container(
                   width: double.infinity,
-                  padding: const EdgeInsets.symmetric(vertical: 24),
+                  padding: const EdgeInsets.fromLTRB(12, 24, 12, 24),
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(color: scheme.outlineVariant),
@@ -119,12 +142,27 @@ class _MarkdownNotesFieldState extends State<MarkdownNotesField> {
                   ),
                 ),
               );
+              if (copyButton == null) return emptyField;
+              return CopyFieldOverlay(copyButton: copyButton, child: emptyField);
             }
 
-            return SelectionArea(
+            final preview = SelectionArea(
               child: MarkdownBody(
                 data: text,
                 styleSheet: _styleSheet(context),
+              ),
+            );
+            if (copyButton == null) return preview;
+
+            return CopyFieldOverlay(
+              copyButton: copyButton,
+              child: Material(
+                color: scheme.surface,
+                borderRadius: BorderRadius.circular(8),
+                child: Padding(
+                  padding: const EdgeInsets.only(top: 4, right: 4),
+                  child: preview,
+                ),
               ),
             );
           },

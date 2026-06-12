@@ -117,7 +117,7 @@ types:
         index: 3
   AppSettings:
     typeId: 7
-    nextIndex: 7
+    nextIndex: 8
     fields:
       ollamaUrl:
         index: 0
@@ -133,6 +133,8 @@ types:
         index: 5
       cardSize:
         index: 6
+      thinkMode:
+        index: 7
   ChannelVariables:
     typeId: 8
     nextIndex: 6
@@ -175,7 +177,7 @@ types:
         index: 3
   ChatMessage:
     typeId: 11
-    nextIndex: 3
+    nextIndex: 4
     fields:
       role:
         index: 0
@@ -183,6 +185,8 @@ types:
         index: 1
       timestamp:
         index: 2
+      thinking:
+        index: 3
   ProjectSuggestion:
     typeId: 12
     nextIndex: 9

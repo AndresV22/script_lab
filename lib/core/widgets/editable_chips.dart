@@ -1,11 +1,18 @@
 import 'package:flutter/material.dart';
 
+import 'copy_field_suffix.dart';
+
 /// Lista editable de chips (etiquetas, títulos alternativos, etc.).
 class EditableChips extends StatefulWidget {
   final List<String> values;
   final String hint;
   final ValueChanged<String> onAdd;
   final ValueChanged<int> onRemove;
+
+  /// Si se define, muestra un botón para copiar este texto al portapapeles.
+  final String Function()? getCopyText;
+  final String copyTooltip;
+  final String copySnackbarMessage;
 
   /// Si es true, escribir una coma añade el chip automáticamente
   /// (y pegar "a, b, c" añade varios de una vez).
@@ -17,6 +24,9 @@ class EditableChips extends StatefulWidget {
     required this.hint,
     required this.onAdd,
     required this.onRemove,
+    this.getCopyText,
+    this.copyTooltip = 'Copiar',
+    this.copySnackbarMessage = 'Copiado al portapapeles',
     this.addOnComma = false,
   });
 
@@ -56,6 +66,43 @@ class _EditableChipsState extends State<EditableChips> {
     );
   }
 
+  Widget _buildInputField() {
+    final addButton = IconButton(
+      icon: const Icon(Icons.add, size: 18),
+      tooltip: 'Añadir',
+      visualDensity: VisualDensity.compact,
+      padding: const EdgeInsets.all(6),
+      constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+      onPressed: () => _submit(controller.text),
+    );
+
+    if (widget.getCopyText != null) {
+      return TextFieldWithCopy(
+        controller: controller,
+        getCopyText: widget.getCopyText!,
+        copyTooltip: widget.copyTooltip,
+        copySnackbarMessage: widget.copySnackbarMessage,
+        topRightActions: [addButton],
+        onChanged: _onChanged,
+        onSubmitted: _submit,
+        decoration: InputDecoration(
+          hintText: widget.hint,
+          contentPadding: const EdgeInsets.fromLTRB(12, 0, 80, 0),
+        ),
+      );
+    }
+
+    return TextField(
+      controller: controller,
+      decoration: InputDecoration(
+        hintText: widget.hint,
+        suffixIcon: addButton,
+      ),
+      onChanged: _onChanged,
+      onSubmitted: _submit,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -77,19 +124,7 @@ class _EditableChipsState extends State<EditableChips> {
               ],
             ),
           ),
-        TextField(
-          controller: controller,
-          decoration: InputDecoration(
-            hintText: widget.hint,
-            suffixIcon: IconButton(
-              icon: const Icon(Icons.add, size: 18),
-              tooltip: 'Añadir',
-              onPressed: () => _submit(controller.text),
-            ),
-          ),
-          onChanged: _onChanged,
-          onSubmitted: _submit,
-        ),
+        _buildInputField(),
       ],
     );
   }
