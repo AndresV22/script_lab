@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <!--
+    If you are serving your web app in a path other than the root, change the
+    href value below to reflect the base path you are serving from.
+
+    The path provided below has to start and end with a slash "/" in order for
+    it to work correctly.
+
+    For more details:
+    * https://developer.mozilla.org/en-US/docs/Web/HTML/Element/base
+
+    This is a placeholder for base href that will be replaced by the value of
+    the `--base-href` argument provided to `flutter build`.
+  -->
+  <base href="$FLUTTER_BASE_HREF">
+
+  <meta charset="UTF-8">
+  <meta content="IE=Edge" http-equiv="X-UA-Compatible">
+  <meta name="description" content="Script Lab: escritura de guiones de YouTube con IA local (Ollama). Privado, rápido y sin suscripciones.">
+
+  <!-- iOS meta tags & icons -->
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="apple-mobile-web-app-title" content="Script Lab">
+  <link rel="apple-touch-icon" href="icons/Icon-192.png">
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="favicon.png"/>
+
+  <title>Script Lab</title>
+  <link rel="manifest" href="manifest.json">
+
+  <style>
+    /* Splash visible durante toda la inicialización de Flutter. */
+    :root {
+      color-scheme: light dark;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      background: #fafaf8;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      html, body {
+        background: #0f0f11;
+      }
+    }
+
+    #splash {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 20px;
+      background: #fafaf8;
+      transition: opacity 280ms ease-out;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+
+    #splash.splash-hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    #splash .logo {
+      width: 56px;
+      height: 56px;
+      border-radius: 14px;
+      background: #5e6ad2;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      animation: splash-pulse 1.8s ease-in-out infinite;
+    }
+
+    #splash .logo svg {
+      width: 30px;
+      height: 30px;
+      fill: #ffffff;
+    }
+
+    #splash .name {
+      font-size: 15px;
+      font-weight: 600;
+      letter-spacing: 0.2px;
+      color: #27272a;
+    }
+
+    #splash .bar {
+      width: 120px;
+      height: 3px;
+      border-radius: 2px;
+      background: rgba(94, 106, 210, 0.18);
+      overflow: hidden;
+    }
+
+    #splash .bar::after {
+      content: "";
+      display: block;
+      width: 40%;
+      height: 100%;
+      border-radius: 2px;
+      background: #5e6ad2;
+      animation: splash-slide 1.2s ease-in-out infinite;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      #splash {
+        background: #0f0f11;
+      }
+
+      #splash .name {
+        color: #e8e8e6;
+      }
+    }
+
+    @keyframes splash-pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.06); }
+    }
+
+    @keyframes splash-slide {
+      0% { transform: translateX(-100%); }
+      100% { transform: translateX(350%); }
+    }
+  </style>
+</head>
+<body>
+  <div id="splash">
+    <div class="logo">
+      <!-- Icono de edición, coherente con el logo de la barra lateral -->
+      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34a.9959.9959 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
+      </svg>
+    </div>
+    <div class="name">Script Lab</div>
+    <div class="bar"></div>
+  </div>
+
+  <!--
+    You can customize the "flutter_bootstrap.js" script.
+    This is useful to provide a custom configuration to the Flutter loader
+    or to give the user feedback during the initialization process.
+
+    For more details:
+    * https://docs.flutter.dev/platform-integration/web/initialization
+  -->
+  <script>
+    // Oculta el splash cuando Flutter pinta su primer frame.
+    window.addEventListener('flutter-first-frame', function () {
+      var splash = document.getElementById('splash');
+      if (!splash) return;
+      splash.classList.add('splash-hidden');
+      splash.addEventListener('transitionend', function () {
+        splash.remove();
+      });
+    });
+  </script>
+  <script src="flutter_bootstrap.js" async></script>
+</body>
+</html>
