@@ -1,6 +1,7 @@
 import 'package:get/get.dart';
 import 'package:uuid/uuid.dart';
 
+import '../../../../core/extensions/date_extensions.dart';
 import '../../../../core/routes/app_routes.dart';
 import '../../../../core/services/settings_service.dart';
 import '../../script_editor/models/script_section.dart';
@@ -12,6 +13,7 @@ import '../services/project_service.dart';
 class ProjectsController extends GetxController {
   final query = ''.obs;
   final statusFilter = Rxn<ProjectStatus>();
+  final calendarMonth = DateTime.now().dateOnly.obs;
 
   List<Project> get filtered {
     final q = query.value.trim().toLowerCase();
@@ -64,7 +66,51 @@ class ProjectsController extends GetxController {
     await ProjectService.to.save(project);
   }
 
+  Future<void> setLaunchDate(Project project, DateTime? date) async {
+    project.estimatedLaunchDate = date?.dateOnly;
+    await ProjectService.to.save(project);
+  }
+
+  List<Project> projectsByStatus(ProjectStatus status) =>
+      filtered.where((p) => p.status == status).toList();
+
+  List<Project> projectsForDay(DateTime day) {
+    final target = day.dateOnly;
+    return filtered
+        .where((p) =>
+            p.estimatedLaunchDate != null &&
+            p.estimatedLaunchDate!.isSameDay(target))
+        .toList();
+  }
+
+  List<Project> get unscheduledProjects =>
+      filtered.where((p) => p.estimatedLaunchDate == null).toList();
+
+  void setCalendarMonth(DateTime month) {
+    calendarMonth.value = DateTime(month.year, month.month);
+  }
+
+  void previousCalendarMonth() {
+    final m = calendarMonth.value;
+    setCalendarMonth(DateTime(m.year, m.month - 1));
+  }
+
+  void nextCalendarMonth() {
+    final m = calendarMonth.value;
+    setCalendarMonth(DateTime(m.year, m.month + 1));
+  }
+
+  void goToTodayCalendar() => setCalendarMonth(DateTime.now());
+
   // ----- Vista -----
+
+  String get sectionMode =>
+      SettingsService.to.settings.value.projectsSectionMode;
+
+  Future<void> setSectionMode(String mode) async {
+    SettingsService.to.settings.value.projectsSectionMode = mode;
+    await SettingsService.to.saveSettings();
+  }
 
   String get viewMode => SettingsService.to.settings.value.projectsViewMode;
 

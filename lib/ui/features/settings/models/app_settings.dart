@@ -23,6 +23,9 @@ class AppSettings extends HiveObject {
   /// 's' | 'm' | 'l'
   String cardSize;
 
+  /// 'list' | 'kanban' | 'calendar'
+  String projectsSectionMode;
+
   AppSettings({
     this.ollamaUrl = AppConstants.defaultOllamaUrl,
     this.defaultModel = '',
@@ -32,6 +35,7 @@ class AppSettings extends HiveObject {
     this.projectsViewMode = 'grid',
     this.structuresViewMode = 'grid',
     this.cardSize = 'm',
+    this.projectsSectionMode = 'list',
   });
 
   Map<String, dynamic> toBackupJson() => {
@@ -43,6 +47,7 @@ class AppSettings extends HiveObject {
         'projectsViewMode': projectsViewMode,
         'structuresViewMode': structuresViewMode,
         'cardSize': cardSize,
+        'projectsSectionMode': projectsSectionMode,
       };
 
   factory AppSettings.fromBackupJson(Map<String, dynamic> json) => AppSettings(
@@ -56,5 +61,7 @@ class AppSettings extends HiveObject {
         projectsViewMode: (json['projectsViewMode'] as String?) ?? 'grid',
         structuresViewMode: (json['structuresViewMode'] as String?) ?? 'grid',
         cardSize: (json['cardSize'] as String?) ?? 'm',
+        projectsSectionMode:
+            (json['projectsSectionMode'] as String?) ?? 'list',
       );
 }

@@ -9,6 +9,7 @@ import 'core/theme/theme_controller.dart';
 import 'ui/features/suggestions/services/suggestions_service.dart';
 import 'ui/features/projects/services/project_service.dart';
 import 'ui/features/prompts/services/prompt_service.dart';
+import 'ui/features/settings/controller/settings_controller.dart';
 import 'ui/features/structures/services/structure_service.dart';
 
 Future<void> main() async {
@@ -22,6 +23,7 @@ Future<void> main() async {
   Get.put(StructureService(), permanent: true);
   Get.put(PromptService(), permanent: true);
   Get.put(ThemeController(), permanent: true);
+  Get.put(SettingsController(), permanent: true);
 
   runApp(const ScriptLabApp());
 }

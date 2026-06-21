@@ -4,6 +4,12 @@ const _months = [
 ];
 
 extension DateFormatting on DateTime {
+  /// Trunca a medianoche local (solo día).
+  DateTime get dateOnly => DateTime(year, month, day);
+
+  bool isSameDay(DateTime other) =>
+      year == other.year && month == other.month && day == other.day;
+
   String get shortDate => '$day ${_months[month - 1]} $year';
 
   String get shortDateTime {

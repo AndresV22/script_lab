@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
+import '../../../../../core/extensions/date_extensions.dart';
 import '../../../../../core/widgets/copy_field_suffix.dart';
 import '../../../../../core/widgets/editable_chips.dart';
 import '../../../../../core/widgets/labeled_field.dart';
@@ -44,6 +45,58 @@ class ProjectInfoTab extends StatelessWidget {
                       label: 'Estado del proyecto',
                       child: Align(alignment: Alignment.centerLeft, child: StatusSelector()),
                     ),
+                    const SizedBox(height: 18),
+                    Obx(() {
+                      controller.revision.value;
+                      final date = controller.project.estimatedLaunchDate;
+                      return LabeledField(
+                        label: 'Fecha estimada de lanzamiento',
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: InputDecorator(
+                                decoration: const InputDecoration(
+                                  isDense: true,
+                                  suffixIcon: Icon(Icons.calendar_today, size: 18),
+                                ),
+                                child: Text(
+                                  date != null ? date.shortDate : 'Sin fecha asignada',
+                                  style: TextStyle(
+                                    color: date != null
+                                        ? null
+                                        : Theme.of(context)
+                                            .colorScheme
+                                            .onSurfaceVariant,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            FilledButton.tonal(
+                              onPressed: () async {
+                                final picked = await showDatePicker(
+                                  context: context,
+                                  initialDate: date ?? DateTime.now(),
+                                  firstDate: DateTime(2020),
+                                  lastDate: DateTime(2100),
+                                );
+                                if (picked != null) {
+                                  controller.setLaunchDate(picked);
+                                }
+                              },
+                              child: const Text('Elegir'),
+                            ),
+                            if (date != null) ...[
+                              const SizedBox(width: 8),
+                              TextButton(
+                                onPressed: () => controller.setLaunchDate(null),
+                                child: const Text('Quitar'),
+                              ),
+                            ],
+                          ],
+                        ),
+                      );
+                    }),
                   ],
                 ),
               ),

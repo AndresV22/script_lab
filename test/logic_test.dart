@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:script_lab/core/extensions/date_extensions.dart';
 import 'package:script_lab/core/extensions/string_extensions.dart';
 import 'package:script_lab/core/helpers/text_stats.dart';
 import 'package:script_lab/ui/features/ai/controller/diff_controller.dart';
@@ -9,6 +10,21 @@ import 'package:script_lab/ui/features/suggestions/services/suggestions_ai_servi
 import 'package:script_lab/ui/features/structures/services/structure_ai_service.dart';
 
 void main() {
+  group('DateFormatting', () {
+    test('dateOnly trunca la hora', () {
+      final dt = DateTime(2026, 6, 15, 14, 30);
+      expect(dt.dateOnly, DateTime(2026, 6, 15));
+    });
+
+    test('isSameDay compara solo el día', () {
+      final a = DateTime(2026, 6, 15, 8);
+      final b = DateTime(2026, 6, 15, 20);
+      final c = DateTime(2026, 6, 16);
+      expect(a.isSameDay(b), isTrue);
+      expect(a.isSameDay(c), isFalse);
+    });
+  });
+
   group('TextStats', () {
     test('cuenta palabras y caracteres', () {
       expect(TextStats.words('Hola mundo, esto es una prueba.'), 6);

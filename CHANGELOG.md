@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.3.0
+
+### Proyectos
+
+- **Tablero Kanban**: nueva pestaña en Proyectos con columnas por estado; arrastrar tarjetas cambia el estado automáticamente.
+- **Calendario de lanzamientos**: vista mensual según la fecha estimada de publicación; arrastrar entre días actualiza la fecha; panel **Sin programar** para proyectos sin fecha.
+- **Fecha estimada de lanzamiento**: nuevo campo en cada proyecto, editable en la pestaña Información y visible en las tarjetas de lista/grid.
+- **Pestañas en Proyectos**: selector Lista · Kanban · Calendario con preferencia persistida en ajustes.
+
 ## 0.2.0
 
 ### Dashboard (Inicio)

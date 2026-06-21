@@ -65,6 +65,7 @@ void main() {
               content: 'Hola, ¿en qué te ayudo?',
               timestamp: DateTime(2026, 3, 1, 10, 1)),
         ],
+        estimatedLaunchDate: DateTime(2026, 6, 15),
       );
 
       final restored = Project.fromBackupJson(roundTrip(project.toBackupJson()));
@@ -100,6 +101,7 @@ void main() {
       expect(restored.chatMessages.first.role, 'user');
       expect(restored.chatMessages.last.content, 'Hola, ¿en qué te ayudo?');
       expect(restored.chatMessages.first.timestamp, DateTime(2026, 3, 1, 10));
+      expect(restored.estimatedLaunchDate, DateTime(2026, 6, 15));
     });
 
     test('Structure conserva id, fecha y pasos', () {
@@ -156,6 +158,7 @@ void main() {
         projectsViewMode: 'list',
         structuresViewMode: 'grid',
         cardSize: 'l',
+        projectsSectionMode: 'kanban',
       );
       final restoredSettings =
           AppSettings.fromBackupJson(roundTrip(settings.toBackupJson()));
@@ -167,6 +170,7 @@ void main() {
       expect(restoredSettings.projectsViewMode, 'list');
       expect(restoredSettings.structuresViewMode, 'grid');
       expect(restoredSettings.cardSize, 'l');
+      expect(restoredSettings.projectsSectionMode, 'kanban');
 
       final channel = ChannelVariables(
         channelName: 'Relojes Altiro',
@@ -206,10 +210,12 @@ void main() {
       expect(project.versions, isEmpty);
       expect(project.chatMessages, isEmpty);
       expect(project.thumbnail, '');
+      expect(project.estimatedLaunchDate, isNull);
 
       final settings = AppSettings.fromBackupJson(const {});
       expect(settings.projectsViewMode, 'grid');
       expect(settings.cardSize, 'm');
+      expect(settings.projectsSectionMode, 'list');
     });
   });
 }

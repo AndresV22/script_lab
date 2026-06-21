@@ -158,6 +158,14 @@ class SettingsController extends GetxController {
 
   @override
   void onClose() {
+    channelNameCtrl.removeListener(_saveChannel);
+    greetingCtrl.removeListener(_saveChannel);
+    audienceCtrl.removeListener(_saveChannel);
+    styleCtrl.removeListener(_saveChannel);
+    avoidCtrl.removeListener(_saveChannel);
+    durationCtrl.removeListener(_saveChannel);
+    defaultDescriptionCtrl.removeListener(_saveDefaultsText);
+    defaultNotesCtrl.removeListener(_saveDefaultsText);
     urlCtrl.dispose();
     channelNameCtrl.dispose();
     greetingCtrl.dispose();

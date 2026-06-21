@@ -17,7 +17,6 @@ import '../../ui/features/analytics/views/analytics_view.dart';
 import '../../ui/features/script_editor/controller/script_editor_controller.dart';
 import '../../ui/features/script_editor/controller/teleprompter_controller.dart';
 import '../../ui/features/script_editor/views/teleprompter_view.dart';
-import '../../ui/features/settings/controller/settings_controller.dart';
 import '../../ui/features/settings/views/settings_view.dart';
 import '../../ui/features/structures/controller/structure_ai_controller.dart';
 import '../../ui/features/structures/controller/structures_controller.dart';
@@ -33,7 +32,6 @@ abstract class AppPages {
         Get.lazyPut(() => DashboardController());
         Get.lazyPut(() => AnalyticsController());
         Get.lazyPut(() => ProjectsController());
-        Get.lazyPut(() => SettingsController());
         Get.lazyPut(() => SuggestionsController());
       }),
     ),
@@ -93,9 +91,6 @@ abstract class AppPages {
     GetPage(
       name: AppRoutes.settings,
       page: () => const SettingsView(),
-      binding: BindingsBuilder(() {
-        Get.lazyPut(() => SettingsController());
-      }),
     ),
   ];
 }

@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:uuid/uuid.dart';
 
+import '../../../../core/extensions/date_extensions.dart';
 import '../../script_editor/models/script_section.dart';
 import '../../script_editor/models/script_version.dart';
 import '../../structures/models/structure.dart';
@@ -90,6 +91,11 @@ class ProjectDetailController extends GetxController {
     project.status = newStatus;
     status.value = newStatus;
     markDirty();
+  }
+
+  void setLaunchDate(DateTime? date) {
+    project.estimatedLaunchDate = date?.dateOnly;
+    notifyChanged();
   }
 
   // ----- Títulos alternativos -----

@@ -27,6 +27,9 @@ class Project extends HiveObject {
   String structureId;
   List<ChatMessage> chatMessages;
 
+  /// Fecha estimada de publicación (solo día; hora ignorada).
+  DateTime? estimatedLaunchDate;
+
   Project({
     required this.id,
     this.topic = '',
@@ -44,6 +47,7 @@ class Project extends HiveObject {
     List<ScriptVersion>? versions,
     this.structureId = '',
     List<ChatMessage>? chatMessages,
+    this.estimatedLaunchDate,
   })  : createdAt = createdAt ?? DateTime.now(),
         updatedAt = updatedAt ?? DateTime.now(),
         altTitles = altTitles ?? [],
@@ -74,6 +78,8 @@ class Project extends HiveObject {
         'description': description,
         'tags': tags,
         'notes': notes,
+        if (estimatedLaunchDate != null)
+          'estimatedLaunchDate': estimatedLaunchDate!.toIso8601String(),
         'sections': orderedSections.map((s) => s.toJson()).toList(),
       };
 
@@ -95,6 +101,8 @@ class Project extends HiveObject {
         'sections': sections.map((s) => s.toBackupJson()).toList(),
         'versions': versions.map((v) => v.toBackupJson()).toList(),
         'chatMessages': chatMessages.map((m) => m.toBackupJson()).toList(),
+        if (estimatedLaunchDate != null)
+          'estimatedLaunchDate': estimatedLaunchDate!.toIso8601String(),
       };
 
   factory Project.fromBackupJson(Map<String, dynamic> json) => Project(
@@ -121,6 +129,9 @@ class Project extends HiveObject {
         chatMessages: _mapList(json['chatMessages'])
             .map(ChatMessage.fromBackupJson)
             .toList(),
+        estimatedLaunchDate: DateTime.tryParse(
+          (json['estimatedLaunchDate'] as String?) ?? '',
+        ),
       );
 
   static List<String> _stringList(Object? value) =>

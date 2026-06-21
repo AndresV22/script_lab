@@ -179,13 +179,14 @@ class ProjectAdapter extends TypeAdapter<Project> {
       versions: (fields[13] as List?)?.cast<ScriptVersion>(),
       structureId: fields[14] == null ? '' : fields[14] as String,
       chatMessages: (fields[15] as List?)?.cast<ChatMessage>(),
+      estimatedLaunchDate: fields[16] as DateTime?,
     );
   }
 
   @override
   void write(BinaryWriter writer, Project obj) {
     writer
-      ..writeByte(16)
+      ..writeByte(17)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -217,7 +218,9 @@ class ProjectAdapter extends TypeAdapter<Project> {
       ..writeByte(14)
       ..write(obj.structureId)
       ..writeByte(15)
-      ..write(obj.chatMessages);
+      ..write(obj.chatMessages)
+      ..writeByte(16)
+      ..write(obj.estimatedLaunchDate);
   }
 
   @override
@@ -377,13 +380,14 @@ class AppSettingsAdapter extends TypeAdapter<AppSettings> {
       projectsViewMode: fields[4] == null ? 'grid' : fields[4] as String,
       structuresViewMode: fields[5] == null ? 'grid' : fields[5] as String,
       cardSize: fields[6] == null ? 'm' : fields[6] as String,
+      projectsSectionMode: fields[8] == null ? 'list' : fields[8] as String,
     );
   }
 
   @override
   void write(BinaryWriter writer, AppSettings obj) {
     writer
-      ..writeByte(8)
+      ..writeByte(9)
       ..writeByte(0)
       ..write(obj.ollamaUrl)
       ..writeByte(1)
@@ -399,7 +403,9 @@ class AppSettingsAdapter extends TypeAdapter<AppSettings> {
       ..writeByte(6)
       ..write(obj.cardSize)
       ..writeByte(7)
-      ..write(obj.thinkMode);
+      ..write(obj.thinkMode)
+      ..writeByte(8)
+      ..write(obj.projectsSectionMode);
   }
 
   @override

@@ -11,7 +11,7 @@ Aplicación web (Flutter) para que creadores de contenido de YouTube planifiquen
 
 ### Núcleo (desde 0.1.0)
 
-- **Proyectos**: cada video es un proyecto con tema, estado, título tentativo y alternativas, miniaturas (principal + alternativas), descripción, etiquetas y notas.
+- **Proyectos**: cada video es un proyecto con tema, estado, fecha estimada de lanzamiento, título tentativo y alternativas, miniaturas (principal + alternativas), descripción, etiquetas y notas.
 - **Editor de guiones**: secciones reordenables, plegables y editables de forma independiente, con conteo de palabras y duración estimada en vivo.
 - **Estructuras**: plantillas reutilizables de secciones; crear, editar, duplicar, exportar/importar JSON y aplicar a un proyecto.
 - **Asistente de IA** (con el contexto completo del proyecto): corrección, análisis (contradicciones, repeticiones, secciones débiles), sugerencias (títulos, miniaturas, hooks, descripción), generación parcial y de guion completo, con respuesta en streaming.
@@ -31,9 +31,16 @@ Aplicación web (Flutter) para que creadores de contenido de YouTube planifiquen
 - **Estructuras con IA**: genera plantillas de secciones desde la vista Estructuras.
 - **Notas Markdown**: editor con vista previa en la pestaña Información del proyecto.
 - **Panel de IA**: categorías organizadas en secciones desplegables.
-- **Lista de proyectos**: cambio de estado con un clic; menú contextual reducido a eliminar.
+- **Lista de proyectos**: tres modos de vista (Lista, Kanban y Calendario); cambio de estado con un clic; menú contextual reducido a eliminar.
 - **Respaldo completo**: exportar e importar todos los datos (incluidas sugerencias) en un único JSON.
 - **Docker**: ejecutar la app y Ollama en local con Docker Compose.
+
+### Desde 0.3.0
+
+- **Tablero Kanban**: pestaña en Proyectos con columnas por estado (Idea → Publicado); arrastra tarjetas entre columnas para cambiar el estado al instante.
+- **Calendario de lanzamientos**: visualiza proyectos según su fecha estimada de publicación; arrastra entre días para reprogramar o al panel **Sin programar** para quitar la fecha.
+- **Fecha estimada de lanzamiento**: asigna y edita la fecha desde la pestaña Información de cada proyecto.
+- **Tres modos de vista en Proyectos**: Lista (grid o filas), Kanban y Calendario, con la preferencia guardada automáticamente.
 
 ## Stack
 

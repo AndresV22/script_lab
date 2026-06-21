@@ -6,7 +6,6 @@ import 'package:get/get.dart';
 import '../../../../core/extensions/date_extensions.dart';
 import '../../../../core/routes/app_routes.dart';
 import '../../../../core/widgets/app_shell.dart';
-import '../../../../core/widgets/confirm_dialog.dart';
 import '../../../../core/services/settings_service.dart';
 import '../../../../core/widgets/empty_state.dart';
 import '../../../../core/widgets/view_mode_switcher.dart';
@@ -14,7 +13,10 @@ import '../controller/projects_controller.dart';
 import '../enums/project_status.dart';
 import '../models/project.dart';
 import '../services/project_service.dart';
+import 'widgets/kanban_board_view.dart';
 import 'widgets/new_project_dialog.dart';
+import 'widgets/project_menu.dart';
+import 'widgets/projects_calendar_view.dart';
 import 'widgets/status_selector.dart';
 
 class ProjectsView extends GetView<ProjectsController> {
@@ -48,23 +50,53 @@ class ProjectsView extends GetView<ProjectsController> {
             ),
           ),
           Padding(
-            padding: const EdgeInsets.fromLTRB(28, 16, 28, 12),
-            child: Row(
-              children: [
-                SizedBox(
-                  width: 280,
-                  child: TextField(
-                    decoration: const InputDecoration(
-                      hintText: 'Filtrar proyectos…',
-                      prefixIcon: Icon(Icons.search, size: 18),
-                      isDense: true,
-                    ),
-                    onChanged: (v) => controller.query.value = v,
+            padding: const EdgeInsets.fromLTRB(28, 12, 28, 0),
+            child: Obx(() {
+              SettingsService.to.settings.value;
+              final mode = controller.sectionMode;
+              return SegmentedButton<String>(
+                segments: const [
+                  ButtonSegment(
+                    value: 'list',
+                    label: Text('Lista'),
+                    icon: Icon(Icons.view_list_outlined, size: 16),
                   ),
-                ),
-                const SizedBox(width: 12),
-                Obx(
-                  () => Wrap(
+                  ButtonSegment(
+                    value: 'kanban',
+                    label: Text('Kanban'),
+                    icon: Icon(Icons.view_kanban_outlined, size: 16),
+                  ),
+                  ButtonSegment(
+                    value: 'calendar',
+                    label: Text('Calendario'),
+                    icon: Icon(Icons.calendar_month_outlined, size: 16),
+                  ),
+                ],
+                selected: {mode},
+                onSelectionChanged: (s) => controller.setSectionMode(s.first),
+              );
+            }),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(28, 16, 28, 12),
+            child: Obx(() {
+              SettingsService.to.settings.value;
+              final isList = controller.sectionMode == 'list';
+              return Row(
+                children: [
+                  SizedBox(
+                    width: 280,
+                    child: TextField(
+                      decoration: const InputDecoration(
+                        hintText: 'Filtrar proyectos…',
+                        prefixIcon: Icon(Icons.search, size: 18),
+                        isDense: true,
+                      ),
+                      onChanged: (v) => controller.query.value = v,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Wrap(
                     spacing: 6,
                     children: [
                       _StatusFilterChip(
@@ -81,25 +113,25 @@ class ProjectsView extends GetView<ProjectsController> {
                         ),
                     ],
                   ),
-                ),
-                const Spacer(),
-                Obx(() {
-                  SettingsService.to.settings.value;
-                  return ViewModeSwitcher(
-                    mode: controller.viewMode,
-                    cardSize: controller.cardSize,
-                    onModeChanged: controller.setViewMode,
-                    onSizeChanged: controller.setCardSize,
-                  );
-                }),
-              ],
-            ),
+                  const Spacer(),
+                  if (isList)
+                    ViewModeSwitcher(
+                      mode: controller.viewMode,
+                      cardSize: controller.cardSize,
+                      onModeChanged: controller.setViewMode,
+                      onSizeChanged: controller.setCardSize,
+                    ),
+                ],
+              );
+            }),
           ),
           Expanded(
             child: Obx(() {
-              // Toca la lista reactiva para reconstruir al cambiar.
+              SettingsService.to.settings.value;
               ProjectService.to.projects.length;
+              final section = controller.sectionMode;
               final projects = controller.filtered;
+
               if (projects.isEmpty) {
                 return EmptyState(
                   icon: Icons.video_library_outlined,
@@ -113,38 +145,62 @@ class ProjectsView extends GetView<ProjectsController> {
                   ),
                 );
               }
-              SettingsService.to.settings.value;
-              if (controller.viewMode == 'list') {
-                return ListView.separated(
-                  padding: const EdgeInsets.fromLTRB(28, 8, 28, 28),
-                  itemCount: projects.length,
-                  separatorBuilder: (_, _) => const SizedBox(height: 8),
-                  itemBuilder: (context, index) =>
-                      _ProjectListRow(project: projects[index]),
-                );
-              }
-              final extents = cardExtents(
-                controller.cardSize,
-                s: (width: 280, height: 170),
-                m: (width: 360, height: 200),
-                l: (width: 460, height: 250),
-              );
-              return GridView.builder(
-                padding: const EdgeInsets.fromLTRB(28, 8, 28, 28),
-                gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-                  maxCrossAxisExtent: extents.width,
-                  mainAxisExtent: extents.height,
-                  crossAxisSpacing: 16,
-                  mainAxisSpacing: 16,
-                ),
-                itemCount: projects.length,
-                itemBuilder: (context, index) =>
-                    _ProjectCard(project: projects[index]),
-              );
+
+              return switch (section) {
+                'kanban' => const KanbanBoardView(),
+                'calendar' => const ProjectsCalendarView(),
+                _ => _ProjectsListBody(
+                    projects: projects,
+                    viewMode: controller.viewMode,
+                    cardSize: controller.cardSize,
+                  ),
+              };
             }),
           ),
         ],
       ),
+    );
+  }
+}
+
+class _ProjectsListBody extends StatelessWidget {
+  final List<Project> projects;
+  final String viewMode;
+  final String cardSize;
+
+  const _ProjectsListBody({
+    required this.projects,
+    required this.viewMode,
+    required this.cardSize,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    if (viewMode == 'list') {
+      return ListView.separated(
+        padding: const EdgeInsets.fromLTRB(28, 8, 28, 28),
+        itemCount: projects.length,
+        separatorBuilder: (_, _) => const SizedBox(height: 8),
+        itemBuilder: (context, index) =>
+            _ProjectListRow(project: projects[index]),
+      );
+    }
+    final extents = cardExtents(
+      cardSize,
+      s: (width: 280, height: 170),
+      m: (width: 360, height: 200),
+      l: (width: 460, height: 250),
+    );
+    return GridView.builder(
+      padding: const EdgeInsets.fromLTRB(28, 8, 28, 28),
+      gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+        maxCrossAxisExtent: extents.width,
+        mainAxisExtent: extents.height,
+        crossAxisSpacing: 16,
+        mainAxisSpacing: 16,
+      ),
+      itemCount: projects.length,
+      itemBuilder: (context, index) => _ProjectCard(project: projects[index]),
     );
   }
 }
@@ -183,38 +239,6 @@ class _StatusFilterChip extends StatelessWidget {
       selected: selected,
       showCheckmark: false,
       onSelected: (_) => onTap(),
-    );
-  }
-}
-
-/// Menú de acciones del proyecto (eliminar), compartido entre cards y lista.
-class _ProjectMenu extends StatelessWidget {
-  final Project project;
-
-  const _ProjectMenu({required this.project});
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    final controller = Get.find<ProjectsController>();
-    return PopupMenuButton<String>(
-      icon: Icon(Icons.more_horiz, size: 18, color: scheme.onSurfaceVariant),
-      onSelected: (value) async {
-        if (value == 'delete') {
-          final ok = await showConfirmDialog(
-            title: 'Eliminar proyecto',
-            message:
-                'Se eliminará "${project.displayTitle}" y todo su contenido. Esta acción no se puede deshacer.',
-          );
-          if (ok) controller.deleteProject(project);
-        }
-      },
-      itemBuilder: (_) => [
-        const PopupMenuItem(
-          value: 'delete',
-          child: Text('Eliminar'),
-        ),
-      ],
     );
   }
 }
@@ -289,6 +313,16 @@ class _ProjectListRow extends StatelessWidget {
                                   color: scheme.onSurfaceVariant),
                             ),
                           ],
+                          if (project.estimatedLaunchDate != null) ...[
+                            const SizedBox(height: 3),
+                            Text(
+                              'Lanzamiento: ${project.estimatedLaunchDate!.shortDate}',
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: scheme.onSurfaceVariant,
+                              ),
+                            ),
+                          ],
                         ],
                       ),
                     ),
@@ -308,7 +342,7 @@ class _ProjectListRow extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 4),
-            _ProjectMenu(project: project),
+            ProjectMenu(project: project),
           ],
         ),
       ),
@@ -337,54 +371,54 @@ class _ProjectCard extends StatelessWidget {
                 children: [
                   Expanded(
                     child: InkWell(
-                    borderRadius: BorderRadius.circular(8),
-                    onTap: () =>
-                        Get.toNamed(AppRoutes.projectDetailPath(project.id)),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          project.displayTitle.isEmpty
-                              ? 'Sin título'
-                              : project.displayTitle,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: Theme.of(context)
-                              .textTheme
-                              .titleSmall
-                              ?.copyWith(fontWeight: FontWeight.w600),
-                        ),
-                        const SizedBox(height: 6),
-                        if (project.thumbnail.isNotEmpty)
-                          Expanded(
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(8),
-                              child: Image.memory(
-                                base64Decode(project.thumbnail),
-                                width: double.infinity,
-                                fit: BoxFit.cover,
+                      borderRadius: BorderRadius.circular(8),
+                      onTap: () =>
+                          Get.toNamed(AppRoutes.projectDetailPath(project.id)),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            project.displayTitle.isEmpty
+                                ? 'Sin título'
+                                : project.displayTitle,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: Theme.of(context)
+                                .textTheme
+                                .titleSmall
+                                ?.copyWith(fontWeight: FontWeight.w600),
+                          ),
+                          const SizedBox(height: 6),
+                          if (project.thumbnail.isNotEmpty)
+                            Expanded(
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(8),
+                                child: Image.memory(
+                                  base64Decode(project.thumbnail),
+                                  width: double.infinity,
+                                  fit: BoxFit.cover,
+                                ),
+                              ),
+                            )
+                          else
+                            Expanded(
+                              child: Text(
+                                project.topic.isEmpty
+                                    ? 'Sin tema definido'
+                                    : project.topic,
+                                maxLines: 3,
+                                overflow: TextOverflow.ellipsis,
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .bodySmall
+                                    ?.copyWith(color: scheme.onSurfaceVariant),
                               ),
                             ),
-                          )
-                        else
-                          Expanded(
-                            child: Text(
-                              project.topic.isEmpty
-                                  ? 'Sin tema definido'
-                                  : project.topic,
-                              maxLines: 3,
-                              overflow: TextOverflow.ellipsis,
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .bodySmall
-                                  ?.copyWith(color: scheme.onSurfaceVariant),
-                            ),
-                          ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
-                ),
-                  _ProjectMenu(project: project),
+                  ProjectMenu(project: project),
                 ],
               ),
             ),
@@ -393,11 +427,18 @@ class _ProjectCard extends StatelessWidget {
               children: [
                 ProjectStatusPicker(project: project, compact: true),
                 const Spacer(),
-                Text(
-                  project.updatedAt.relative,
-                  style: TextStyle(
-                      fontSize: 11, color: scheme.onSurfaceVariant),
-                ),
+                if (project.estimatedLaunchDate != null)
+                  Text(
+                    project.estimatedLaunchDate!.shortDate,
+                    style: TextStyle(
+                        fontSize: 11, color: scheme.onSurfaceVariant),
+                  )
+                else
+                  Text(
+                    project.updatedAt.relative,
+                    style: TextStyle(
+                        fontSize: 11, color: scheme.onSurfaceVariant),
+                  ),
               ],
             ),
           ],
