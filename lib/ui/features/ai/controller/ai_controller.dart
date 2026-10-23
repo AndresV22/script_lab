@@ -17,7 +17,9 @@ import '../../script_editor/models/script_section.dart';
 import '../enums/ai_task.dart';
 import '../services/ai_service.dart';
 import '../views/diff_review_view.dart';
+import '../../structures/services/structure_service.dart';
 import '../views/widgets/ai_instructions_dialog.dart';
+import '../views/widgets/generate_full_script_dialog.dart';
 import '../views/widgets/ai_result_dialog.dart';
 import '../views/widgets/llm_unavailable_dialog.dart';
 import '../views/widgets/model_picker_dialog.dart';
@@ -147,8 +149,27 @@ class AiController extends GetxController {
   void runDescription({String extra = ''}) =>
       _run(AiTask.description, AiService.descriptionPrompt(project, extra: extra));
 
-  void runGenerateFull() =>
-      _run(AiTask.generateFull, AiService.generateFullPrompt(project));
+  void runGenerateFull() {
+    unawaited(_openGenerateFull());
+  }
+
+  Future<void> _openGenerateFull() async {
+    final request = await GenerateFullScriptDialog.show();
+    if (request == null) return;
+    final structure = request.useProjectSections
+        ? null
+        : StructureService.to.structures
+            .firstWhereOrNull((item) => item.id == request.structureId);
+    _run(
+      AiTask.generateFull,
+      AiService.generateFullPrompt(
+        project,
+        extra: request.prompt,
+        structure: structure,
+        useProjectSections: request.useProjectSections,
+      ),
+    );
+  }
 
   void runGenerateSection(ScriptSection section) => _run(
         AiTask.generateSection,

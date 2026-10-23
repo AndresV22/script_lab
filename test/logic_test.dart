@@ -4,6 +4,8 @@ import 'package:script_lab/core/extensions/string_extensions.dart';
 import 'package:script_lab/core/helpers/text_stats.dart';
 import 'package:script_lab/ui/features/ai/controller/diff_controller.dart';
 import 'package:script_lab/ui/features/ai/services/ai_service.dart';
+import 'package:script_lab/ui/features/projects/models/project.dart';
+import 'package:script_lab/ui/features/script_editor/models/script_section.dart';
 import 'package:script_lab/ui/features/structures/models/structure.dart';
 import 'package:script_lab/ui/features/suggestions/enums/suggestion_type.dart';
 import 'package:script_lab/ui/features/suggestions/services/suggestions_ai_service.dart';
@@ -110,6 +112,79 @@ Esto es el cierre.
       expect(parsed[0].$1, 'Hook inicial');
       expect(parsed[0].$2, 'Esto es el hook.');
       expect(parsed[1].$1, 'Conclusión');
+    });
+
+    test('generateFullPrompt incluye el prompt y la plantilla', () {
+      final project = Project(id: 'p1', topic: 'Relojes');
+      project.sections.add(ScriptSection(
+        id: 's1',
+        title: 'Sección vieja',
+        content: 'Texto ya escrito que no debe usarse.',
+      ));
+      final structure = Structure(
+        id: 'st1',
+        name: 'Review',
+        steps: [
+          StructureStep(name: 'Hook', description: 'Abrir con el precio'),
+          StructureStep(name: 'Veredicto'),
+        ],
+      );
+      final prompt = AiService.generateFullPrompt(
+        project,
+        extra: 'Menciona la garantía de dos años',
+        structure: structure,
+      );
+      expect(prompt, contains('## Hook'));
+      expect(prompt, contains('Abrir con el precio'));
+      expect(prompt, contains('## Veredicto'));
+      expect(prompt, contains('Menciona la garantía de dos años'));
+      expect(prompt, contains('Plantilla de estructura "Review"'));
+      expect(prompt, contains('desde cero'));
+      expect(prompt, isNot(contains('Texto ya escrito que no debe usarse.')));
+      expect(prompt, isNot(contains('Sección vieja')));
+    });
+
+    test('con secciones del proyecto respeta esos encabezados y el prompt', () {
+      final project = Project(id: 'p1', topic: 'Relojes');
+      project.sections.add(ScriptSection(
+        id: 's1',
+        title: 'Sección del proyecto',
+        content: 'Texto ya escrito que no debe usarse.',
+        description: 'Mencionar la correa',
+      ));
+      final prompt = AiService.generateFullPrompt(
+        project,
+        extra: 'Tono cercano',
+        useProjectSections: true,
+      );
+      expect(prompt, contains('## Sección del proyecto'));
+      expect(prompt, contains('Mencionar la correa'));
+      expect(prompt, contains('Tono cercano'));
+      expect(prompt, contains('Secciones actuales del proyecto'));
+      expect(prompt, contains('desde cero'));
+      expect(prompt, isNot(contains('Texto ya escrito que no debe usarse.')));
+      expect(prompt, isNot(contains('Plantilla de estructura')));
+    });
+
+    test('sin plantilla el prompt del creador define las secciones', () {
+      final project = Project(id: 'p1', topic: 'Relojes');
+      project.sections.add(ScriptSection(
+        id: 's1',
+        title: 'Sección vieja',
+        content: 'Texto ya escrito que no debe usarse.',
+        description: 'Nota de la sección vieja',
+      ));
+      final prompt = AiService.generateFullPrompt(
+        project,
+        extra: 'Usa solo Hook y Cierre',
+      );
+      expect(prompt, contains('Usa solo Hook y Cierre'));
+      expect(prompt, contains('desde cero'));
+      expect(prompt, contains('No hay plantilla de estructura'));
+      expect(prompt, isNot(contains('Sección vieja')));
+      expect(prompt, isNot(contains('Texto ya escrito que no debe usarse.')));
+      expect(prompt, isNot(contains('Nota de la sección vieja')));
+      expect(prompt, isNot(contains('Plantilla de estructura')));
     });
   });
 

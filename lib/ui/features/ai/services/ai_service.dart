@@ -3,6 +3,7 @@ import '../../../../core/extensions/string_extensions.dart';
 import '../../../../core/services/settings_service.dart';
 import '../../projects/models/project.dart';
 import '../../script_editor/models/script_section.dart';
+import '../../structures/models/structure.dart';
 
 /// Construye los prompts con el contexto completo del proyecto,
 /// las variables del canal y las muestras de estilo del creador.
@@ -66,7 +67,11 @@ Estás conversando con el creador sobre este proyecto. Responde de forma
 directa y útil; puedes proponer ideas, mejorar fragmentos o responder dudas
 usando todo el contexto anterior.''';
 
-  static String _projectContext(Project p, {bool includeScript = true}) {
+  static String _projectContext(
+    Project p, {
+    bool includeScript = true,
+    bool includeStructure = true,
+  }) {
     final buffer = StringBuffer()..writeln('Contexto del proyecto actual:');
     if (p.topic.isNotEmpty) buffer.writeln('- Tema del video: ${p.topic}');
     if (p.tentativeTitle.isNotEmpty) {
@@ -76,14 +81,16 @@ usando todo el contexto anterior.''';
       buffer.writeln('- Descripción actual: ${p.description}');
     }
     if (p.tags.isNotEmpty) buffer.writeln('- Etiquetas: ${p.tags.join(', ')}');
-    final titles = p.orderedSections.map((s) => s.title).join(' → ');
-    if (titles.isNotEmpty) buffer.writeln('- Estructura del guion: $titles');
-    final described =
-        p.orderedSections.where((s) => s.description.trim().isNotEmpty);
-    if (described.isNotEmpty) {
-      buffer.writeln('- Indicaciones del creador por sección:');
-      for (final s in described) {
-        buffer.writeln('  · ${s.title}: ${s.description.trim()}');
+    if (includeStructure) {
+      final titles = p.orderedSections.map((s) => s.title).join(' → ');
+      if (titles.isNotEmpty) buffer.writeln('- Estructura del guion: $titles');
+      final described =
+          p.orderedSections.where((s) => s.description.trim().isNotEmpty);
+      if (described.isNotEmpty) {
+        buffer.writeln('- Indicaciones del creador por sección:');
+        for (final s in described) {
+          buffer.writeln('  · ${s.title}: ${s.description.trim()}');
+        }
       }
     }
     if (includeScript && p.fullScriptText.trim().isNotEmpty) {
@@ -189,26 +196,110 @@ ${s.description.trim().isNotEmpty ? 'Indicaciones del creador para esta sección
 listo para ser narrado en voz alta.
 Devuelve ÚNICAMENTE el texto de la sección, sin encabezados ni comentarios.''';
 
-  static String generateFullPrompt(Project p) {
-    final sectionList = p.orderedSections.isEmpty
-        ? '## Hook inicial\n## Introducción\n## Desarrollo\n## Conclusión'
-        : p.orderedSections
-            .map((s) => s.description.trim().isEmpty
-                ? '## ${s.title}'
-                : '## ${s.title}\n(Indicaciones: ${s.description.trim()})')
-            .join('\n');
-    return '''
-${_projectContext(p, includeScript: false)}
+  static String generateFullPrompt(
+    Project p, {
+    String extra = '',
+    Structure? structure,
+    bool useProjectSections = false,
+  }) {
+    final template = structure != null && structure.steps.isNotEmpty
+        ? structure
+        : null;
+    final guidance = extra.trim();
+    final fresh = guidance.isNotEmpty;
+    final context = _projectContext(
+      p,
+      includeScript: false,
+      includeStructure: !fresh,
+    );
+    if (template != null) {
+      final notes = guidance.isEmpty
+          ? ''
+          : '\n\nIndicaciones del creador (definen el texto de cada sección):\n$guidance';
+      final fromScratch = fresh ? '\n${_freshScriptLine()}\n' : '';
+      return '''
+$context
+$notes
+$fromScratch
+Escribe el guion completo del video, listo para ser narrado en voz alta.
+Plantilla de estructura "${template.name}". Sigue estas secciones en este orden:
 
-Escribe el guion completo del video, listo para ser narrado en voz alta,
-siguiendo exactamente esta estructura de secciones:
-
-$sectionList
+${_stepsOutline(template)}
 
 Usa los encabezados tal cual, con el formato "## Nombre de la sección", y
 escribe el contenido completo debajo de cada uno. Las líneas "(Indicaciones: …)"
 son guía para ti: respétalas pero NO las incluyas en el guion.
 No agregues comentarios fuera del guion.''';
+    }
+
+    if (useProjectSections) {
+      final notes = guidance.isEmpty
+          ? ''
+          : '\n\nIndicaciones del creador (definen el texto de cada sección):\n$guidance';
+      final fromScratch = fresh ? '\n${_freshScriptLine()}\n' : '';
+      return '''
+$context
+$notes
+$fromScratch
+Escribe el guion completo del video, listo para ser narrado en voz alta.
+Secciones actuales del proyecto. Sigue estos títulos en este orden y escribe el contenido desde cero:
+
+${_projectOutline(p)}
+
+Usa los encabezados tal cual, con el formato "## Nombre de la sección", y
+escribe el contenido completo debajo de cada uno. Las líneas "(Indicaciones: …)"
+son guía para ti: respétalas pero NO las incluyas en el guion.
+No agregues comentarios fuera del guion.''';
+    }
+
+    if (guidance.isNotEmpty) {
+      return '''
+$context
+
+Indicaciones del creador (definen el guion). Si piden puntos o secciones, úsalos como estructura:
+$guidance
+
+${_freshScriptLine()}
+Escribe el guion completo del video, listo para ser narrado en voz alta.
+No hay plantilla de estructura: no inventes un esquema fijo si el creador ya indicó las secciones.
+Organiza el texto con encabezados "## Nombre de la sección".
+No agregues comentarios fuera del guion.''';
+    }
+
+    return '''
+$context
+
+Escribe el guion completo del video, listo para ser narrado en voz alta.
+Usa esta estructura:
+
+${_projectOutline(p)}
+
+Usa los encabezados tal cual, con el formato "## Nombre de la sección", y
+escribe el contenido completo debajo de cada uno. Las líneas "(Indicaciones: …)"
+son guía para ti: respétalas pero NO las incluyas en el guion.
+No agregues comentarios fuera del guion.''';
+  }
+
+  static String _freshScriptLine() =>
+      'Escribe un guion nuevo desde cero. La fuente del texto es el prompt del creador.';
+
+  static String _stepsOutline(Structure structure) {
+    return structure.steps.map((step) {
+      final description = step.description.trim();
+      if (description.isEmpty) return '## ${step.name}';
+      return '## ${step.name}\n(Indicaciones: $description)';
+    }).join('\n');
+  }
+
+  static String _projectOutline(Project p) {
+    if (p.orderedSections.isEmpty) {
+      return '## Hook inicial\n## Introducción\n## Desarrollo\n## Conclusión';
+    }
+    return p.orderedSections
+        .map((s) => s.description.trim().isEmpty
+            ? '## ${s.title}'
+            : '## ${s.title}\n(Indicaciones: ${s.description.trim()})')
+        .join('\n');
   }
 
   static String customPrompt(Project p, String prompt) => '''
