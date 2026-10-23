@@ -1,24 +1,25 @@
 import 'dart:async';
 
-import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:uuid/uuid.dart';
 
+import '../../../../core/constants/llm_provider.dart';
 import '../../../../core/extensions/string_extensions.dart';
-import '../../../../core/services/ollama_service.dart';
+import '../../../../core/models/llm_status.dart';
+import '../../../../core/services/llm_service.dart';
 import '../../../../core/services/settings_service.dart';
 import '../../projects/controller/project_detail_controller.dart';
 import '../../projects/models/project.dart';
 import '../../prompts/models/prompt_item.dart';
 import '../../script_editor/controller/script_editor_controller.dart';
 import '../../script_editor/models/script_section.dart';
-import '../../../../core/routes/app_routes.dart';
 import '../enums/ai_task.dart';
 import '../services/ai_service.dart';
 import '../views/diff_review_view.dart';
 import '../views/widgets/ai_instructions_dialog.dart';
 import '../views/widgets/ai_result_dialog.dart';
+import '../views/widgets/llm_unavailable_dialog.dart';
 import '../views/widgets/model_picker_dialog.dart';
 
 /// Orquesta las tareas de IA sobre el proyecto abierto.
@@ -62,7 +63,7 @@ class AiController extends GetxController {
 
   void _start(String prompt) {
     isRunning.value = true;
-    final stream = OllamaService.to.chat(
+    final stream = LlmService.to.chat(
       model: selectedModel.value,
       system: AiService.buildSystemPrompt(),
       prompt: prompt,
@@ -84,9 +85,9 @@ class AiController extends GetxController {
   /// diálogo de resultado, que algunos flujos abren justo después de lanzar
   /// la tarea (p. ej. [launchMetadataTask] o [generateSectionDialog]).
   void _requestModel({required VoidCallback onReady}) {
-    final ollama = OllamaService.to;
-    if (ollama.status.value == OllamaStatus.connected &&
-        ollama.models.isNotEmpty) {
+    final llm = LlmService.to;
+    if (llm.status.value == OllamaStatus.connected &&
+        llm.models.isNotEmpty) {
       Future.microtask(() => Get.dialog(
             ModelPickerDialog(
               onSelected: (model, saveAsDefault) {
@@ -106,29 +107,9 @@ class AiController extends GetxController {
       return;
     }
 
-    error.value =
-        'Sin conexión con Ollama o sin modelos disponibles. Configura la conexión en Ajustes.';
-    Future.microtask(() => Get.dialog(
-          AlertDialog(
-            title: const Text('Ollama no disponible'),
-            content: const SizedBox(
-              width: 400,
-              child: Text(
-                  'No hay conexión con Ollama o no hay modelos instalados. '
-                  'Verifica que Ollama esté en ejecución y configura la URL y el modelo en Ajustes.'),
-            ),
-            actions: [
-              TextButton(onPressed: Get.back, child: const Text('Cerrar')),
-              FilledButton(
-                onPressed: () {
-                  Get.back();
-                  Get.offAllNamed(AppRoutes.settings);
-                },
-                child: const Text('Ir a Ajustes'),
-              ),
-            ],
-          ),
-        ));
+    error.value = LlmProvider.unavailableMessage(
+        SettingsService.to.settings.value.llmProvider);
+    Future.microtask(LlmUnavailableDialog.show);
   }
 
   void cancel() {

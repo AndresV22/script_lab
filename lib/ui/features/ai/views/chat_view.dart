@@ -3,7 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 
 import '../../../../core/constants/ai_options.dart';
-import '../../../../core/services/ollama_service.dart';
+import '../../../../core/services/llm_service.dart';
 import '../../../../core/services/settings_service.dart';
 import '../../../../core/widgets/empty_state.dart';
 import '../../../../core/widgets/ollama_model_dropdown.dart';
@@ -47,7 +47,7 @@ class _ChatToolbar extends StatelessWidget {
             width: 260,
             child: Obx(() => OllamaModelDropdown(
                   value: controller.selectedModel.value,
-                  models: OllamaService.to.models,
+                  models: LlmService.to.models,
                   onChanged: (model) =>
                       controller.selectedModel.value = model ?? '',
                   isDense: true,

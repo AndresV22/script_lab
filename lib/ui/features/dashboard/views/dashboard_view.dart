@@ -1,15 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
+import '../../../../core/constants/llm_provider.dart';
 import '../../../../core/extensions/date_extensions.dart';
 import '../../../../core/helpers/text_stats.dart';
+import '../../../../core/models/llm_status.dart';
 import '../../../../core/routes/app_routes.dart';
 import '../../../../core/services/backup_service.dart';
-import '../../../../core/services/ollama_service.dart';
+import '../../../../core/services/llm_service.dart';
 import '../../../../core/services/settings_service.dart';
 import '../../../../core/widgets/app_shell.dart';
 import '../../../../core/widgets/labeled_field.dart';
 import '../../../../core/widgets/ollama_model_dropdown.dart';
+import '../../settings/views/widgets/external_llm_fields.dart';
+import '../../settings/views/widgets/llm_provider_selector.dart';
 import '../../projects/services/project_service.dart';
 import '../../projects/views/widgets/new_project_dialog.dart';
 import '../../projects/views/widgets/status_selector.dart';
@@ -37,7 +41,7 @@ class DashboardView extends GetView<DashboardController> {
         StructureService.to.structures.length;
         SettingsService.to.settings.value;
         SuggestionsService.to.suggestions.length;
-        OllamaService.to.status.value;
+        LlmService.to.status.value;
 
         return SingleChildScrollView(
           padding: const EdgeInsets.fromLTRB(28, 24, 28, 28),
@@ -358,7 +362,7 @@ class _OllamaPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final settingsCtrl = Get.find<SettingsController>();
-    final ollama = OllamaService.to;
+    final llm = LlmService.to;
     final scheme = Theme.of(context).colorScheme;
 
     return _PanelCard(
@@ -366,48 +370,61 @@ class _OllamaPanel extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Expanded(
-                child: LabeledField(
-                  label: 'URL del servidor',
-                  child: TextField(
-                    controller: settingsCtrl.urlCtrl,
-                    decoration: const InputDecoration(
-                      hintText: 'http://localhost:11434',
+          const LlmProviderSelector(),
+          const SizedBox(height: 12),
+          Obx(() {
+            final provider = settingsCtrl.settings.settings.value.llmProvider;
+            if (provider != LlmProvider.ollama) {
+              return ExternalLlmFields(
+                provider: provider,
+                showAdvanced: false,
+              );
+            }
+            return Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Expanded(
+                  child: LabeledField(
+                    label: 'URL del servidor',
+                    child: TextField(
+                      controller: settingsCtrl.urlCtrl,
+                      decoration: const InputDecoration(
+                        hintText: 'http://localhost:11434',
+                      ),
                     ),
                   ),
                 ),
-              ),
-              const SizedBox(width: 12),
-              Obx(() => FilledButton.icon(
-                    onPressed: settingsCtrl.testing.value
-                        ? null
-                        : settingsCtrl.testConnection,
-                    icon: settingsCtrl.testing.value
-                        ? const SizedBox(
-                            width: 14,
-                            height: 14,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : const Icon(Icons.wifi_tethering, size: 17),
-                    label: const Text('Probar'),
-                  )),
-            ],
-          ),
+                const SizedBox(width: 12),
+                FilledButton.icon(
+                  onPressed: settingsCtrl.testing.value
+                      ? null
+                      : settingsCtrl.testConnection,
+                  icon: settingsCtrl.testing.value
+                      ? const SizedBox(
+                          width: 14,
+                          height: 14,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.wifi_tethering, size: 17),
+                  label: const Text('Probar'),
+                ),
+              ],
+            );
+          }),
           const SizedBox(height: 12),
           Obx(() {
-            final status = ollama.status.value;
+            final provider = settingsCtrl.settings.settings.value.llmProvider;
+            final name = LlmProvider.label(provider);
+            final status = llm.status.value;
             final (color, label) = switch (status) {
               OllamaStatus.connected => (
                   Colors.green,
-                  'Conectado · ${ollama.models.length} modelos'
+                  'Conectado · ${llm.models.length} modelos'
                 ),
               OllamaStatus.checking => (Colors.orange, 'Comprobando…'),
               OllamaStatus.disconnected => (
                   Colors.red,
-                  'Sin conexión'
+                  'Sin conexión con $name'
                 ),
               OllamaStatus.unknown => (Colors.grey, 'Estado desconocido'),
             };
@@ -426,13 +443,13 @@ class _OllamaPanel extends StatelessWidget {
           }),
           const SizedBox(height: 12),
           Obx(() {
-            if (ollama.models.isEmpty) return const SizedBox.shrink();
+            if (llm.models.isEmpty) return const SizedBox.shrink();
             final current = settingsCtrl.settings.settings.value.defaultModel;
             return LabeledField(
               label: 'Modelo predeterminado',
               child: OllamaModelDropdown(
                 value: current,
-                models: ollama.models,
+                models: llm.models,
                 onChanged: settingsCtrl.setDefaultModel,
               ),
             );

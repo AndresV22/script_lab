@@ -4,15 +4,16 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../../../core/constants/ai_options.dart';
+import '../../../../core/models/llm_status.dart';
 import '../../../../core/models/ollama_chat_chunk.dart';
-import '../../../../core/routes/app_routes.dart';
-import '../../../../core/services/ollama_service.dart';
+import '../../../../core/services/llm_service.dart';
 import '../../../../core/services/settings_service.dart';
 import '../../../../core/widgets/confirm_dialog.dart';
 import '../../projects/controller/project_detail_controller.dart';
 import '../../projects/models/project.dart';
 import '../models/chat_message.dart';
 import '../services/ai_service.dart';
+import '../views/widgets/llm_unavailable_dialog.dart';
 import '../views/widgets/model_picker_dialog.dart';
 
 /// Chat persistente con la IA en el contexto de un proyecto.
@@ -83,7 +84,7 @@ class ChatController extends GetxController {
       for (final m in project.chatMessages)
         {'role': m.role, 'content': m.content},
     ];
-    _subscription = OllamaService.to
+    _subscription = LlmService.to
         .chatWithHistoryChunks(
           model: selectedModel.value,
           system: AiService.chatSystemPrompt(project),
@@ -161,9 +162,9 @@ class ChatController extends GetxController {
 
   /// Mismo flujo de "sin modelo" que el asistente de IA.
   void _requestModel({required VoidCallback onReady}) {
-    final ollama = OllamaService.to;
-    if (ollama.status.value == OllamaStatus.connected &&
-        ollama.models.isNotEmpty) {
+    final llm = LlmService.to;
+    if (llm.status.value == OllamaStatus.connected &&
+        llm.models.isNotEmpty) {
       Get.dialog(
         ModelPickerDialog(
           onSelected: (model, saveAsDefault) {
@@ -181,26 +182,7 @@ class ChatController extends GetxController {
       return;
     }
 
-    Get.dialog(
-      AlertDialog(
-        title: const Text('Ollama no disponible'),
-        content: const SizedBox(
-          width: 400,
-          child: Text('No hay conexión con Ollama o no hay modelos instalados. '
-              'Verifica que Ollama esté en ejecución y configura la URL y el modelo en Ajustes.'),
-        ),
-        actions: [
-          TextButton(onPressed: Get.back, child: const Text('Cerrar')),
-          FilledButton(
-            onPressed: () {
-              Get.back();
-              Get.offAllNamed(AppRoutes.settings);
-            },
-            child: const Text('Ir a Ajustes'),
-          ),
-        ],
-      ),
-    );
+    LlmUnavailableDialog.show();
   }
 
   @override

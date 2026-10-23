@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
-import '../../../../core/services/ollama_service.dart';
+import '../../../../core/constants/llm_provider.dart';
+import '../../../../core/models/llm_status.dart';
+import '../../../../core/services/llm_service.dart';
+import '../../../../core/services/settings_service.dart';
 import '../../../../core/widgets/ollama_model_dropdown.dart';
 import '../../prompts/services/prompt_service.dart';
 import '../../script_editor/controller/script_editor_controller.dart';
@@ -88,18 +91,20 @@ class _ConnectionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final ollama = OllamaService.to;
+    final llm = LlmService.to;
     final controller = Get.find<AiController>();
     final scheme = Theme.of(context).colorScheme;
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(14),
         child: Obx(() {
-          final status = ollama.status.value;
+          final provider = SettingsService.to.settings.value.llmProvider;
+          final name = LlmProvider.label(provider);
+          final status = llm.status.value;
           final (color, label) = switch (status) {
-            OllamaStatus.connected => (Colors.green, 'Ollama conectado'),
+            OllamaStatus.connected => (Colors.green, '$name conectado'),
             OllamaStatus.checking => (Colors.orange, 'Comprobando…'),
-            _ => (Colors.red, 'Sin conexión con Ollama'),
+            _ => (Colors.red, 'Sin conexión con $name'),
           };
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -121,12 +126,12 @@ class _ConnectionCard extends StatelessWidget {
                   IconButton(
                     icon: const Icon(Icons.refresh, size: 16),
                     tooltip: 'Probar conexión',
-                    onPressed: ollama.checkConnection,
+                    onPressed: llm.refreshConnection,
                   ),
                 ],
               ),
               const SizedBox(height: 8),
-              if (ollama.models.isEmpty)
+              if (llm.models.isEmpty)
                 Text(
                   'Configura la conexión en Ajustes.',
                   style: TextStyle(
@@ -135,7 +140,7 @@ class _ConnectionCard extends StatelessWidget {
               else
                 OllamaModelDropdown(
                   value: controller.selectedModel.value,
-                  models: ollama.models,
+                  models: llm.models,
                   hint: 'Modelo',
                   isDense: true,
                   onChanged: (v) =>

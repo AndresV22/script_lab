@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:script_lab/core/constants/llm_provider.dart';
 import 'package:script_lab/ui/features/ai/models/chat_message.dart';
 import 'package:script_lab/ui/features/projects/enums/project_status.dart';
 import 'package:script_lab/ui/features/projects/models/project.dart';
@@ -164,6 +165,10 @@ void main() {
           AppSettings.fromBackupJson(roundTrip(settings.toBackupJson()));
       expect(restoredSettings.ollamaUrl, 'http://otra:11434');
       expect(restoredSettings.defaultModel, 'llama3');
+      expect(restoredSettings.llmProvider, 'ollama');
+      expect(restoredSettings.deepseekApiKey, '');
+      expect(restoredSettings.deepseekBaseUrl, LlmProvider.deepseekV1Url);
+      expect(restoredSettings.hiveApiVersion, LlmProvider.v3);
       expect(restoredSettings.thinkMode, 'medium');
       expect(restoredSettings.themeMode, 'dark');
       expect(restoredSettings.wordsPerMinute, 150);
@@ -216,6 +221,31 @@ void main() {
       expect(settings.projectsViewMode, 'grid');
       expect(settings.cardSize, 'm');
       expect(settings.projectsSectionMode, 'list');
+      expect(settings.llmProvider, LlmProvider.ollama);
+      expect(settings.deepseekApiVersion, LlmProvider.v1);
+      expect(settings.hiveApiVersion, LlmProvider.v3);
+      expect(settings.deepseekApiKey, isEmpty);
+      expect(settings.hiveApiKey, isEmpty);
+    });
+
+    test('La clave y la URL base externas sobreviven al respaldo', () {
+      final settings = AppSettings(
+        llmProvider: LlmProvider.hive,
+        hiveApiKey: 'clave-hive',
+        hiveBaseUrl: 'https://api-va1.thehive.ai/api/v3',
+        hiveApiVersion: LlmProvider.v3,
+        deepseekApiKey: 'clave-deepseek',
+        deepseekBaseUrl: LlmProvider.deepseekV1Url,
+        deepseekApiVersion: LlmProvider.v1,
+      );
+      final restored =
+          AppSettings.fromBackupJson(roundTrip(settings.toBackupJson()));
+      expect(restored.llmProvider, LlmProvider.hive);
+      expect(restored.hiveApiKey, 'clave-hive');
+      expect(restored.hiveBaseUrl, 'https://api-va1.thehive.ai/api/v3');
+      expect(restored.hiveApiVersion, LlmProvider.v3);
+      expect(restored.deepseekApiKey, 'clave-deepseek');
+      expect(restored.deepseekBaseUrl, LlmProvider.deepseekV1Url);
     });
   });
 }

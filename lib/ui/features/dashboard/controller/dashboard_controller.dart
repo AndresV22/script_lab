@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
+import '../../../../core/models/llm_status.dart';
 import '../../../../core/routes/app_routes.dart';
-import '../../../../core/services/ollama_service.dart';
+import '../../../../core/services/llm_service.dart';
 import '../../../../core/services/settings_service.dart';
 import '../../analytics/controller/analytics_controller.dart';
 import '../../projects/models/project.dart';
@@ -81,7 +82,7 @@ class DashboardController extends GetxController {
 
   List<DashboardTip> get tips {
     final settings = SettingsService.to;
-    final ollama = OllamaService.to;
+    final llm = LlmService.to;
     final items = <DashboardTip>[];
 
     if (settings.channel.value.isEmpty) {
@@ -114,11 +115,11 @@ class DashboardController extends GetxController {
       ));
     }
 
-    if (ollama.status.value != OllamaStatus.connected) {
+    if (llm.status.value != OllamaStatus.connected) {
       items.add(DashboardTip(
-        title: 'Conectar Ollama',
+        title: 'Conectar el modelo de IA',
         description:
-            'Verifica la URL del servidor y elige un modelo para usar la IA.',
+            'Elige Ollama, DeepSeek o The Hive y comprueba la conexión.',
         icon: Icons.smart_toy_outlined,
         color: const Color(0xFFD2A65E),
         onTap: scrollToOllama,

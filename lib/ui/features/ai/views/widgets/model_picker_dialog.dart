@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
-import '../../../../../core/services/ollama_service.dart';
+import '../../../../../core/services/llm_service.dart';
 
 /// Diálogo para elegir un modelo de Ollama al vuelo cuando se intenta
 /// generar con IA sin un modelo seleccionado.
@@ -25,7 +25,7 @@ class _ModelPickerDialogState extends State<ModelPickerDialog> {
 
   @override
   Widget build(BuildContext context) {
-    final models = OllamaService.to.models;
+    final models = LlmService.to.models;
     final scheme = Theme.of(context).colorScheme;
     return AlertDialog(
       title: const Text('Selecciona un modelo'),

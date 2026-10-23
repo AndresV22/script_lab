@@ -7,10 +7,11 @@ import 'package:http/http.dart' as http;
 import 'http/create_client_io.dart'
     if (dart.library.js_interop) 'http/create_client_web.dart';
 import '../constants/ai_options.dart';
+import '../models/llm_status.dart';
 import '../models/ollama_chat_chunk.dart';
 import 'settings_service.dart';
 
-enum OllamaStatus { unknown, checking, connected, disconnected }
+export '../models/llm_status.dart';
 
 class OllamaException implements Exception {
   final String message;
@@ -35,12 +36,6 @@ class OllamaService extends GetxService {
   }
 
   String get defaultModel => SettingsService.to.settings.value.defaultModel;
-
-  @override
-  void onInit() {
-    super.onInit();
-    checkConnection();
-  }
 
   /// Comprueba la conexión y refresca la lista de modelos disponibles.
   Future<bool> checkConnection() async {

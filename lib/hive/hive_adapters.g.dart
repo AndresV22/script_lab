@@ -372,6 +372,21 @@ class AppSettingsAdapter extends TypeAdapter<AppSettings> {
           ? AppConstants.defaultOllamaUrl
           : fields[0] as String,
       defaultModel: fields[1] == null ? '' : fields[1] as String,
+      llmProvider: fields[9] == null ? LlmProvider.ollama : fields[9] as String,
+      deepseekApiKey: fields[10] == null ? '' : fields[10] as String,
+      deepseekBaseUrl: fields[11] == null
+          ? LlmProvider.deepseekV1Url
+          : fields[11] as String,
+      deepseekApiVersion: fields[12] == null
+          ? LlmProvider.v1
+          : fields[12] as String,
+      hiveApiKey: fields[13] == null ? '' : fields[13] as String,
+      hiveBaseUrl: fields[14] == null
+          ? LlmProvider.hiveV3Url
+          : fields[14] as String,
+      hiveApiVersion: fields[15] == null
+          ? LlmProvider.v3
+          : fields[15] as String,
       thinkMode: fields[7] == null ? AiThinkMode.off : fields[7] as String,
       themeMode: fields[2] == null ? 'system' : fields[2] as String,
       wordsPerMinute: fields[3] == null
@@ -387,7 +402,7 @@ class AppSettingsAdapter extends TypeAdapter<AppSettings> {
   @override
   void write(BinaryWriter writer, AppSettings obj) {
     writer
-      ..writeByte(9)
+      ..writeByte(16)
       ..writeByte(0)
       ..write(obj.ollamaUrl)
       ..writeByte(1)
@@ -405,7 +420,21 @@ class AppSettingsAdapter extends TypeAdapter<AppSettings> {
       ..writeByte(7)
       ..write(obj.thinkMode)
       ..writeByte(8)
-      ..write(obj.projectsSectionMode);
+      ..write(obj.projectsSectionMode)
+      ..writeByte(9)
+      ..write(obj.llmProvider)
+      ..writeByte(10)
+      ..write(obj.deepseekApiKey)
+      ..writeByte(11)
+      ..write(obj.deepseekBaseUrl)
+      ..writeByte(12)
+      ..write(obj.deepseekApiVersion)
+      ..writeByte(13)
+      ..write(obj.hiveApiKey)
+      ..writeByte(14)
+      ..write(obj.hiveBaseUrl)
+      ..writeByte(15)
+      ..write(obj.hiveApiVersion);
   }
 
   @override

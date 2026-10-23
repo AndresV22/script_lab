@@ -4,10 +4,12 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:uuid/uuid.dart';
 
-import '../../../../core/routes/app_routes.dart';
-import '../../../../core/services/ollama_service.dart';
+import '../../../../core/constants/llm_provider.dart';
+import '../../../../core/models/llm_status.dart';
+import '../../../../core/services/llm_service.dart';
 import '../../../../core/services/settings_service.dart';
 import '../../ai/services/ai_service.dart';
+import '../../ai/views/widgets/llm_unavailable_dialog.dart';
 import '../../ai/views/widgets/model_picker_dialog.dart';
 import '../models/structure.dart';
 import '../services/structure_ai_service.dart';
@@ -70,7 +72,7 @@ class StructureAiController extends GetxController {
 
   void _start(String prompt) {
     isRunning.value = true;
-    final stream = OllamaService.to.chat(
+    final stream = LlmService.to.chat(
       model: selectedModel.value,
       system: AiService.buildSystemPrompt(),
       prompt: prompt,
@@ -86,9 +88,9 @@ class StructureAiController extends GetxController {
   }
 
   void _requestModel({required VoidCallback onReady}) {
-    final ollama = OllamaService.to;
-    if (ollama.status.value == OllamaStatus.connected &&
-        ollama.models.isNotEmpty) {
+    final llm = LlmService.to;
+    if (llm.status.value == OllamaStatus.connected &&
+        llm.models.isNotEmpty) {
       Future.microtask(() => Get.dialog(
             ModelPickerDialog(
               onSelected: (model, saveAsDefault) {
@@ -108,30 +110,9 @@ class StructureAiController extends GetxController {
       return;
     }
 
-    error.value =
-        'Sin conexión con Ollama o sin modelos disponibles. Configura la conexión en Ajustes.';
-    Future.microtask(() => Get.dialog(
-          AlertDialog(
-            title: const Text('Ollama no disponible'),
-            content: const SizedBox(
-              width: 400,
-              child: Text(
-                'No hay conexión con Ollama o no hay modelos instalados. '
-                'Verifica que Ollama esté en ejecución y configura la URL y el modelo en Ajustes.',
-              ),
-            ),
-            actions: [
-              TextButton(onPressed: Get.back, child: const Text('Cerrar')),
-              FilledButton(
-                onPressed: () {
-                  Get.back();
-                  Get.offAllNamed(AppRoutes.settings);
-                },
-                child: const Text('Ir a Ajustes'),
-              ),
-            ],
-          ),
-        ));
+    error.value = LlmProvider.unavailableMessage(
+        SettingsService.to.settings.value.llmProvider);
+    Future.microtask(LlmUnavailableDialog.show);
   }
 
   void cancel() {

@@ -119,7 +119,7 @@ types:
         index: 3
   AppSettings:
     typeId: 7
-    nextIndex: 9
+    nextIndex: 16
     fields:
       ollamaUrl:
         index: 0
@@ -139,6 +139,20 @@ types:
         index: 7
       projectsSectionMode:
         index: 8
+      llmProvider:
+        index: 9
+      deepseekApiKey:
+        index: 10
+      deepseekBaseUrl:
+        index: 11
+      deepseekApiVersion:
+        index: 12
+      hiveApiKey:
+        index: 13
+      hiveBaseUrl:
+        index: 14
+      hiveApiVersion:
+        index: 15
   ChannelVariables:
     typeId: 8
     nextIndex: 6

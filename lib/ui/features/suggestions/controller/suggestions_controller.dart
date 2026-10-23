@@ -3,10 +3,12 @@ import 'package:get/get.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../../../core/routes/app_routes.dart';
-import '../../../../core/services/ollama_service.dart';
+import '../../../../core/models/llm_status.dart';
+import '../../../../core/services/llm_service.dart';
 import '../../../../core/services/settings_service.dart';
 import '../../../../core/widgets/confirm_dialog.dart';
 import '../../ai/services/ai_service.dart';
+import '../../ai/views/widgets/llm_unavailable_dialog.dart';
 import '../../ai/views/widgets/model_picker_dialog.dart';
 import '../../projects/models/project.dart';
 import '../../projects/services/project_service.dart';
@@ -304,7 +306,7 @@ class SuggestionsController extends GetxController {
       count: count,
     );
 
-    final stream = OllamaService.to.chat(
+    final stream = LlmService.to.chat(
       model: selectedModel.value,
       system: AiService.buildSystemPrompt(),
       prompt: prompt,
@@ -367,9 +369,9 @@ class SuggestionsController extends GetxController {
   }
 
   void _requestModel({required VoidCallback onReady}) {
-    final ollama = OllamaService.to;
-    if (ollama.status.value == OllamaStatus.connected &&
-        ollama.models.isNotEmpty) {
+    final llm = LlmService.to;
+    if (llm.status.value == OllamaStatus.connected &&
+        llm.models.isNotEmpty) {
       Get.dialog(
         ModelPickerDialog(
           onSelected: (model, saveAsDefault) {
@@ -387,27 +389,6 @@ class SuggestionsController extends GetxController {
       return;
     }
 
-    Get.dialog(
-      AlertDialog(
-        title: const Text('Ollama no disponible'),
-        content: const SizedBox(
-          width: 400,
-          child: Text(
-            'No hay conexión con Ollama o no hay modelos instalados. '
-            'Configura la conexión en Ajustes.',
-          ),
-        ),
-        actions: [
-          TextButton(onPressed: Get.back, child: const Text('Cerrar')),
-          FilledButton(
-            onPressed: () {
-              Get.back();
-              Get.offAllNamed(AppRoutes.settings);
-            },
-            child: const Text('Ir a Ajustes'),
-          ),
-        ],
-      ),
-    );
+    LlmUnavailableDialog.show();
   }
 }

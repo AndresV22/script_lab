@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import 'app.dart';
+import 'core/services/llm_service.dart';
 import 'core/services/ollama_service.dart';
 import 'core/services/settings_service.dart';
 import 'core/services/storage_service.dart';
@@ -18,6 +19,7 @@ Future<void> main() async {
 
   Get.put(SettingsService(), permanent: true);
   Get.put(OllamaService(), permanent: true);
+  Get.put(LlmService(), permanent: true);
   Get.put(ProjectService(), permanent: true);
   Get.put(SuggestionsService(), permanent: true);
   Get.put(StructureService(), permanent: true);

@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../../../core/constants/ai_options.dart';
+import '../../../../core/constants/llm_provider.dart';
 import '../../../../core/extensions/date_extensions.dart';
 import '../../../../core/extensions/string_extensions.dart';
 import '../../../../core/helpers/text_stats.dart';
+import '../../../../core/models/llm_status.dart';
 import '../../../../core/services/backup_service.dart';
-import '../../../../core/services/ollama_service.dart';
+import '../../../../core/services/llm_service.dart';
 import '../../../../core/theme/theme_controller.dart';
 import '../../../../core/widgets/app_shell.dart';
 import '../../../../core/widgets/confirm_dialog.dart';
@@ -15,6 +17,8 @@ import '../../../../core/widgets/labeled_field.dart';
 import '../../../../core/widgets/ollama_model_dropdown.dart';
 import '../../structures/services/structure_service.dart';
 import '../controller/settings_controller.dart';
+import 'widgets/external_llm_fields.dart';
+import 'widgets/llm_provider_selector.dart';
 
 class SettingsView extends GetView<SettingsController> {
   const SettingsView({super.key});
@@ -108,56 +112,66 @@ class _OllamaCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final controller = Get.find<SettingsController>();
-    final ollama = OllamaService.to;
+    final llm = LlmService.to;
     return _SettingsCard(
-      title: 'Inteligencia artificial (Ollama)',
+      title: 'Inteligencia artificial',
       subtitle:
-          'Conexión con tu servidor local de Ollama. Todo el procesamiento ocurre en tu equipo.',
+          'Elige un proveedor. Solo verás los campos de esa conexión.',
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Expanded(
-                child: LabeledField(
-                  label: 'URL del servidor',
-                  child: TextField(
-                    controller: controller.urlCtrl,
-                    decoration: const InputDecoration(
-                        hintText: 'http://localhost:11434'),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Obx(() => FilledButton.icon(
-                    onPressed: controller.testing.value
-                        ? null
-                        : controller.testConnection,
-                    icon: controller.testing.value
-                        ? const SizedBox(
-                            width: 14,
-                            height: 14,
-                            child:
-                                CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : const Icon(Icons.wifi_tethering, size: 17),
-                    label: const Text('Probar conexión'),
-                  )),
-            ],
-          ),
+          const LlmProviderSelector(),
           const SizedBox(height: 14),
           Obx(() {
-            final status = ollama.status.value;
+            final provider = controller.settings.settings.value.llmProvider;
+            if (provider == LlmProvider.deepseek ||
+                provider == LlmProvider.hive) {
+              return ExternalLlmFields(provider: provider);
+            }
+            return Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Expanded(
+                  child: LabeledField(
+                    label: 'URL del servidor',
+                    child: TextField(
+                      controller: controller.urlCtrl,
+                      decoration: const InputDecoration(
+                          hintText: 'http://localhost:11434'),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                FilledButton.icon(
+                  onPressed: controller.testing.value
+                      ? null
+                      : controller.testConnection,
+                  icon: controller.testing.value
+                      ? const SizedBox(
+                          width: 14,
+                          height: 14,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.wifi_tethering, size: 17),
+                  label: const Text('Probar conexión'),
+                ),
+              ],
+            );
+          }),
+          const SizedBox(height: 14),
+          Obx(() {
+            final provider = controller.settings.settings.value.llmProvider;
+            final name = LlmProvider.label(provider);
+            final status = llm.status.value;
             final (color, label) = switch (status) {
               OllamaStatus.connected => (
                   Colors.green,
-                  'Conectado · ${ollama.models.length} modelos disponibles'
+                  'Conectado · ${llm.models.length} modelos disponibles'
                 ),
               OllamaStatus.checking => (Colors.orange, 'Comprobando conexión…'),
               OllamaStatus.disconnected => (
                   Colors.red,
-                  'Sin conexión: ${ollama.lastError.value.truncate(120)}'
+                  'Sin conexión con $name: ${llm.lastError.value.truncate(120)}'
                 ),
               OllamaStatus.unknown => (Colors.grey, 'Estado desconocido'),
             };
@@ -177,13 +191,13 @@ class _OllamaCard extends StatelessWidget {
           }),
           const SizedBox(height: 14),
           Obx(() {
-            if (ollama.models.isEmpty) return const SizedBox.shrink();
+            if (llm.models.isEmpty) return const SizedBox.shrink();
             final current = controller.settings.settings.value.defaultModel;
             return LabeledField(
               label: 'Modelo predeterminado',
               child: OllamaModelDropdown(
                 value: current,
-                models: ollama.models,
+                models: llm.models,
                 onChanged: controller.setDefaultModel,
               ),
             );
@@ -191,13 +205,14 @@ class _OllamaCard extends StatelessWidget {
           const SizedBox(height: 14),
           Obx(() {
             controller.settings.settings.value;
-            final thinkMode = controller.settings.settings.value.thinkMode;
+            final stored = controller.settings.settings.value;
+            final thinkMode = stored.thinkMode;
+            final helper = stored.llmProvider == LlmProvider.ollama
+                ? 'Activa el razonamiento previo en modelos compatibles.'
+                : 'Se envía como reasoning_effort al proveedor elegido.';
             return LabeledField(
               label: 'Thinking (razonamiento)',
-              helper:
-                  'Activa el razonamiento previo en modelos compatibles. '
-                  'Usa «Activado» para qwen3/deepseek-r1; niveles bajo/medio/alto '
-                  'para gpt-oss. Las respuestas pueden tardar más.',
+              helper: helper,
               child: DropdownButtonFormField<String>(
                 initialValue: AiThinkMode.values.contains(thinkMode)
                     ? thinkMode
