@@ -20,10 +20,16 @@ class SettingsController extends GetxController {
   late final TextEditingController deepseekKeyCtrl;
   late final TextEditingController hiveUrlCtrl;
   late final TextEditingController hiveKeyCtrl;
+  late final TextEditingController openaiUrlCtrl;
+  late final TextEditingController openaiKeyCtrl;
+  late final TextEditingController claudeUrlCtrl;
+  late final TextEditingController claudeKeyCtrl;
   late final TextEditingController customModelCtrl;
 
   final hideDeepseekKey = true.obs;
   final hideHiveKey = true.obs;
+  final hideOpenaiKey = true.obs;
+  final hideClaudeKey = true.obs;
   late final TextEditingController channelNameCtrl;
   late final TextEditingController greetingCtrl;
   late final TextEditingController audienceCtrl;
@@ -44,11 +50,19 @@ class SettingsController extends GetxController {
     deepseekKeyCtrl = TextEditingController(text: stored.deepseekApiKey);
     hiveUrlCtrl = TextEditingController(text: stored.hiveBaseUrl);
     hiveKeyCtrl = TextEditingController(text: stored.hiveApiKey);
+    openaiUrlCtrl = TextEditingController(text: stored.openaiBaseUrl);
+    openaiKeyCtrl = TextEditingController(text: stored.openaiApiKey);
+    claudeUrlCtrl = TextEditingController(text: stored.claudeBaseUrl);
+    claudeKeyCtrl = TextEditingController(text: stored.claudeApiKey);
     customModelCtrl = TextEditingController(text: stored.defaultModel);
     deepseekUrlCtrl.addListener(_saveExternal);
     deepseekKeyCtrl.addListener(_saveExternal);
     hiveUrlCtrl.addListener(_saveExternal);
     hiveKeyCtrl.addListener(_saveExternal);
+    openaiUrlCtrl.addListener(_saveExternal);
+    openaiKeyCtrl.addListener(_saveExternal);
+    claudeUrlCtrl.addListener(_saveExternal);
+    claudeKeyCtrl.addListener(_saveExternal);
     final channel = settings.channel.value;
     channelNameCtrl = TextEditingController(text: channel.channelName);
     greetingCtrl = TextEditingController(text: channel.greeting);
@@ -113,13 +127,21 @@ class SettingsController extends GetxController {
       ..deepseekBaseUrl = deepseekUrlCtrl.text.trim()
       ..deepseekApiKey = deepseekKeyCtrl.text.trim()
       ..hiveBaseUrl = hiveUrlCtrl.text.trim()
-      ..hiveApiKey = hiveKeyCtrl.text.trim();
+      ..hiveApiKey = hiveKeyCtrl.text.trim()
+      ..openaiBaseUrl = openaiUrlCtrl.text.trim()
+      ..openaiApiKey = openaiKeyCtrl.text.trim()
+      ..claudeBaseUrl = claudeUrlCtrl.text.trim()
+      ..claudeApiKey = claudeKeyCtrl.text.trim();
     settings.saveSettings();
   }
 
   void toggleDeepseekKeyVisibility() => hideDeepseekKey.toggle();
 
   void toggleHiveKeyVisibility() => hideHiveKey.toggle();
+
+  void toggleOpenaiKeyVisibility() => hideOpenaiKey.toggle();
+
+  void toggleClaudeKeyVisibility() => hideClaudeKey.toggle();
 
   void onProviderSelected(Set<String> selection) {
     unawaited(setLlmProvider(selection.first));
@@ -133,12 +155,28 @@ class SettingsController extends GetxController {
     unawaited(setProviderApiVersion(LlmProvider.hive, selection.first));
   }
 
+  void onOpenaiVersionSelected(Set<String> selection) {
+    unawaited(setProviderApiVersion(LlmProvider.openai, selection.first));
+  }
+
+  void onClaudeVersionSelected(Set<String> selection) {
+    unawaited(setProviderApiVersion(LlmProvider.claude, selection.first));
+  }
+
   void onTestDeepseek() {
     unawaited(testProvider(LlmProvider.deepseek));
   }
 
   void onTestHive() {
     unawaited(testProvider(LlmProvider.hive));
+  }
+
+  void onTestOpenai() {
+    unawaited(testProvider(LlmProvider.openai));
+  }
+
+  void onTestClaude() {
+    unawaited(testProvider(LlmProvider.claude));
   }
 
   Future<void> setLlmProvider(String provider) async {
@@ -151,12 +189,21 @@ class SettingsController extends GetxController {
   Future<void> setProviderApiVersion(String provider, String version) async {
     if (!LlmProvider.apiVersions.contains(version)) return;
     final stored = settings.settings.value;
-    if (provider == LlmProvider.hive) {
-      stored.hiveApiVersion = version;
-      _applyVersion(hiveUrlCtrl, LlmProvider.hive, version);
-    } else {
-      stored.deepseekApiVersion = version;
-      _applyVersion(deepseekUrlCtrl, LlmProvider.deepseek, version);
+    switch (provider) {
+      case LlmProvider.hive:
+        stored.hiveApiVersion = version;
+        _applyVersion(hiveUrlCtrl, provider, version);
+      case LlmProvider.openai:
+        stored.openaiApiVersion = version;
+        _applyVersion(openaiUrlCtrl, provider, version);
+      case LlmProvider.claude:
+        stored.claudeApiVersion = version;
+        _applyVersion(claudeUrlCtrl, provider, version);
+      case LlmProvider.deepseek:
+        stored.deepseekApiVersion = version;
+        _applyVersion(deepseekUrlCtrl, provider, version);
+      default:
+        return;
     }
     await settings.saveSettings();
   }
@@ -275,11 +322,19 @@ class SettingsController extends GetxController {
     deepseekKeyCtrl.removeListener(_saveExternal);
     hiveUrlCtrl.removeListener(_saveExternal);
     hiveKeyCtrl.removeListener(_saveExternal);
+    openaiUrlCtrl.removeListener(_saveExternal);
+    openaiKeyCtrl.removeListener(_saveExternal);
+    claudeUrlCtrl.removeListener(_saveExternal);
+    claudeKeyCtrl.removeListener(_saveExternal);
     urlCtrl.dispose();
     deepseekUrlCtrl.dispose();
     deepseekKeyCtrl.dispose();
     hiveUrlCtrl.dispose();
     hiveKeyCtrl.dispose();
+    openaiUrlCtrl.dispose();
+    openaiKeyCtrl.dispose();
+    claudeUrlCtrl.dispose();
+    claudeKeyCtrl.dispose();
     customModelCtrl.dispose();
     channelNameCtrl.dispose();
     greetingCtrl.dispose();

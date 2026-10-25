@@ -23,33 +23,47 @@ class ExternalLlmFields extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
     return Obx(() {
       final settings = controller.settings.settings.value;
-      final version = LlmProvider.apiVersionOf(
-        provider: provider,
-        deepseekApiVersion: settings.deepseekApiVersion,
-        hiveApiVersion: settings.hiveApiVersion,
-      );
+      final version = settings.apiVersionFor(provider);
       final selectedVersion =
           LlmProvider.apiVersions.contains(version) ? version : LlmProvider.v1;
-      final urlCtrl = provider == LlmProvider.hive
-          ? controller.hiveUrlCtrl
-          : controller.deepseekUrlCtrl;
-      final keyCtrl = provider == LlmProvider.hive
-          ? controller.hiveKeyCtrl
-          : controller.deepseekKeyCtrl;
-      final hidden = provider == LlmProvider.hive
-          ? controller.hideHiveKey.value
-          : controller.hideDeepseekKey.value;
+      final urlCtrl = switch (provider) {
+        LlmProvider.hive => controller.hiveUrlCtrl,
+        LlmProvider.openai => controller.openaiUrlCtrl,
+        LlmProvider.claude => controller.claudeUrlCtrl,
+        _ => controller.deepseekUrlCtrl,
+      };
+      final keyCtrl = switch (provider) {
+        LlmProvider.hive => controller.hiveKeyCtrl,
+        LlmProvider.openai => controller.openaiKeyCtrl,
+        LlmProvider.claude => controller.claudeKeyCtrl,
+        _ => controller.deepseekKeyCtrl,
+      };
+      final hidden = switch (provider) {
+        LlmProvider.hive => controller.hideHiveKey.value,
+        LlmProvider.openai => controller.hideOpenaiKey.value,
+        LlmProvider.claude => controller.hideClaudeKey.value,
+        _ => controller.hideDeepseekKey.value,
+      };
       final testing = controller.testing.value &&
           settings.llmProvider == provider;
-      final onVersionSelected = provider == LlmProvider.hive
-          ? controller.onHiveVersionSelected
-          : controller.onDeepseekVersionSelected;
-      final onTest = provider == LlmProvider.hive
-          ? controller.onTestHive
-          : controller.onTestDeepseek;
-      final onToggleKey = provider == LlmProvider.hive
-          ? controller.toggleHiveKeyVisibility
-          : controller.toggleDeepseekKeyVisibility;
+      final void Function(Set<String>) onVersionSelected = switch (provider) {
+        LlmProvider.hive => controller.onHiveVersionSelected,
+        LlmProvider.openai => controller.onOpenaiVersionSelected,
+        LlmProvider.claude => controller.onClaudeVersionSelected,
+        _ => controller.onDeepseekVersionSelected,
+      };
+      final void Function() onTest = switch (provider) {
+        LlmProvider.hive => controller.onTestHive,
+        LlmProvider.openai => controller.onTestOpenai,
+        LlmProvider.claude => controller.onTestClaude,
+        _ => controller.onTestDeepseek,
+      };
+      final void Function() onToggleKey = switch (provider) {
+        LlmProvider.hive => controller.toggleHiveKeyVisibility,
+        LlmProvider.openai => controller.toggleOpenaiKeyVisibility,
+        LlmProvider.claude => controller.toggleClaudeKeyVisibility,
+        _ => controller.toggleDeepseekKeyVisibility,
+      };
       return Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -143,7 +157,7 @@ class ExternalLlmFields extends StatelessWidget {
             if (kIsWeb) ...[
               const SizedBox(height: 4),
               Text(
-                'En el navegador, DeepSeek y The Hive se envían por el servidor de la app. '
+                'En el navegador, el dominio documentado se envía por el servidor de la app. '
                 'Si cambias el dominio, el navegador puede bloquear la petición.',
                 style: TextStyle(fontSize: 12, color: scheme.onSurfaceVariant),
               ),
@@ -160,8 +174,8 @@ class ExternalLlmFields extends StatelessWidget {
                     Expanded(
                       child: TextField(
                         controller: controller.customModelCtrl,
-                        decoration: const InputDecoration(
-                          hintText: 'Ej. deepseek-flash',
+                        decoration: InputDecoration(
+                          hintText: LlmProvider.modelHint(provider),
                         ),
                       ),
                     ),

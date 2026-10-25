@@ -1,6 +1,6 @@
 /// Reescribe hosts conocidos hacia el proxy del servidor web.
 ///
-/// El navegador no puede llamar a DeepSeek ni a The Hive por CORS.
+/// El navegador no puede llamar a estos proveedores por CORS.
 /// Nginx reenvía estas rutas al proveedor.
 class LlmWebProxy {
   static String? prefixForHost(String host) => switch (host) {
@@ -8,6 +8,8 @@ class LlmWebProxy {
         'api.thehive.ai' => '/llm-proxy/hive',
         'api-cdn.thehive.ai' => '/llm-proxy/hive-cdn',
         'api-va1.thehive.ai' => '/llm-proxy/hive-va1',
+        'api.openai.com' => '/llm-proxy/openai',
+        'api.anthropic.com' => '/llm-proxy/claude',
         _ => null,
       };
 

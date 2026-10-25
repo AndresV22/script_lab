@@ -387,6 +387,20 @@ class AppSettingsAdapter extends TypeAdapter<AppSettings> {
       hiveApiVersion: fields[15] == null
           ? LlmProvider.v3
           : fields[15] as String,
+      openaiApiKey: fields[16] == null ? '' : fields[16] as String,
+      openaiBaseUrl: fields[17] == null
+          ? LlmProvider.openaiV1Url
+          : fields[17] as String,
+      openaiApiVersion: fields[18] == null
+          ? LlmProvider.v1
+          : fields[18] as String,
+      claudeApiKey: fields[19] == null ? '' : fields[19] as String,
+      claudeBaseUrl: fields[20] == null
+          ? LlmProvider.claudeV1Url
+          : fields[20] as String,
+      claudeApiVersion: fields[21] == null
+          ? LlmProvider.v1
+          : fields[21] as String,
       thinkMode: fields[7] == null ? AiThinkMode.off : fields[7] as String,
       themeMode: fields[2] == null ? 'system' : fields[2] as String,
       wordsPerMinute: fields[3] == null
@@ -402,7 +416,7 @@ class AppSettingsAdapter extends TypeAdapter<AppSettings> {
   @override
   void write(BinaryWriter writer, AppSettings obj) {
     writer
-      ..writeByte(16)
+      ..writeByte(22)
       ..writeByte(0)
       ..write(obj.ollamaUrl)
       ..writeByte(1)
@@ -434,7 +448,19 @@ class AppSettingsAdapter extends TypeAdapter<AppSettings> {
       ..writeByte(14)
       ..write(obj.hiveBaseUrl)
       ..writeByte(15)
-      ..write(obj.hiveApiVersion);
+      ..write(obj.hiveApiVersion)
+      ..writeByte(16)
+      ..write(obj.openaiApiKey)
+      ..writeByte(17)
+      ..write(obj.openaiBaseUrl)
+      ..writeByte(18)
+      ..write(obj.openaiApiVersion)
+      ..writeByte(19)
+      ..write(obj.claudeApiKey)
+      ..writeByte(20)
+      ..write(obj.claudeBaseUrl)
+      ..writeByte(21)
+      ..write(obj.claudeApiVersion);
   }
 
   @override

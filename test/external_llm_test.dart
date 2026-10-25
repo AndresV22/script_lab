@@ -61,6 +61,34 @@ void main() {
       );
     });
 
+    test('OpenAI v1 usa /v1/chat/completions', () {
+      final endpoint = ExternalLlmEndpoint(
+        baseUrl: LlmProvider.openaiV1Url,
+        apiVersion: LlmProvider.v1,
+        provider: LlmProvider.openai,
+      );
+      expect(
+        endpoint.chatCompletions.toString(),
+        'https://api.openai.com/v1/chat/completions',
+      );
+      expect(
+        endpoint.models.toString(),
+        'https://api.openai.com/v1/models',
+      );
+    });
+
+    test('Claude sin segmento de versión recibe /v1', () {
+      final endpoint = ExternalLlmEndpoint(
+        baseUrl: 'https://api.anthropic.com',
+        apiVersion: LlmProvider.v1,
+        provider: LlmProvider.claude,
+      );
+      expect(
+        endpoint.chatCompletions.toString(),
+        'https://api.anthropic.com/v1/chat/completions',
+      );
+    });
+
     test('una URL vacía usa el preset del proveedor', () {
       final endpoint = ExternalLlmEndpoint(
         baseUrl: '  ',
@@ -96,6 +124,23 @@ void main() {
       );
     });
 
+    test('en web reescribe OpenAI y Claude', () {
+      expect(
+        LlmWebProxy.rewrite(
+          Uri.parse('https://api.openai.com/v1/models'),
+          useProxy: true,
+        ).toString(),
+        '/llm-proxy/openai/v1/models',
+      );
+      expect(
+        LlmWebProxy.rewrite(
+          Uri.parse('https://api.anthropic.com/v1/chat/completions'),
+          useProxy: true,
+        ).toString(),
+        '/llm-proxy/claude/v1/chat/completions',
+      );
+    });
+
     test('fuera de la web deja la URL original', () {
       final original = Uri.parse('https://api.deepseek.com/v1/models');
       expect(
@@ -117,6 +162,39 @@ void main() {
           'thinking': {'type': 'disabled'},
           'reasoning_effort': 'none',
         },
+      );
+    });
+
+    test('OpenAI omite el razonamiento cuando está apagado', () {
+      expect(
+        ExternalThinking.parameters(
+          provider: LlmProvider.openai,
+          thinking: false,
+          mode: AiThinkMode.high,
+        ),
+        isEmpty,
+      );
+    });
+
+    test('OpenAI envía medium cuando el modo es medio', () {
+      expect(
+        ExternalThinking.parameters(
+          provider: LlmProvider.openai,
+          thinking: true,
+          mode: AiThinkMode.medium,
+        ),
+        {'reasoning_effort': 'medium'},
+      );
+    });
+
+    test('Claude no envía parámetros de razonamiento', () {
+      expect(
+        ExternalThinking.parameters(
+          provider: LlmProvider.claude,
+          thinking: true,
+          mode: AiThinkMode.high,
+        ),
+        isEmpty,
       );
     });
 

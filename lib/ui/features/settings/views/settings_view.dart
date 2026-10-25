@@ -124,8 +124,7 @@ class _OllamaCard extends StatelessWidget {
           const SizedBox(height: 14),
           Obx(() {
             final provider = controller.settings.settings.value.llmProvider;
-            if (provider == LlmProvider.deepseek ||
-                provider == LlmProvider.hive) {
+            if (provider != LlmProvider.ollama) {
               return ExternalLlmFields(provider: provider);
             }
             return Row(
@@ -207,9 +206,13 @@ class _OllamaCard extends StatelessWidget {
             controller.settings.settings.value;
             final stored = controller.settings.settings.value;
             final thinkMode = stored.thinkMode;
-            final helper = stored.llmProvider == LlmProvider.ollama
-                ? 'Activa el razonamiento previo en modelos compatibles.'
-                : 'Se envía como reasoning_effort al proveedor elegido.';
+            final helper = switch (stored.llmProvider) {
+              LlmProvider.ollama =>
+                'Activa el razonamiento previo en modelos compatibles.',
+              LlmProvider.claude =>
+                'Claude razona de forma adaptativa en su API.',
+              _ => 'Se envía como reasoning_effort al proveedor elegido.',
+            };
             return LabeledField(
               label: 'Thinking (razonamiento)',
               helper: helper,

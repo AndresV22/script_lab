@@ -1,11 +1,11 @@
 # Script Lab
 
-Aplicación web (Flutter) para que creadores de contenido de YouTube planifiquen, escriban y perfeccionen sus guiones desde una sola plataforma, con inteligencia artificial **local** mediante [Ollama](https://ollama.com).
+Aplicación web (Flutter) para que creadores de contenido de YouTube planifiquen, escriban y perfeccionen sus guiones desde una sola plataforma. La inteligencia artificial puede ser **local** con [Ollama](https://ollama.com) o un proveedor externo: DeepSeek, The Hive, OpenAI o Claude.
 
 - Todo el proceso creativo en una sola aplicación.
-- IA local: sin suscripciones ni servicios externos.
-- Enfoque en productividad, organización y privacidad.
-- Los datos se guardan en tu navegador (IndexedDB vía Hive).
+- IA local con Ollama, o una API externa con tu propia clave.
+- Enfoque en productividad, organización y privacidad de los guiones.
+- Los datos, incluidas las claves de API, se guardan en tu navegador (IndexedDB vía Hive) y forman parte del respaldo JSON.
 
 ## Funcionalidades
 
@@ -14,7 +14,7 @@ Aplicación web (Flutter) para que creadores de contenido de YouTube planifiquen
 - **Proyectos**: cada video es un proyecto con tema, estado, fecha estimada de lanzamiento, título tentativo y alternativas, miniaturas (principal + alternativas), descripción, etiquetas y notas.
 - **Editor de guiones**: secciones reordenables, plegables y editables de forma independiente, con conteo de palabras y duración estimada en vivo.
 - **Estructuras**: plantillas reutilizables de secciones; crear, editar, duplicar, exportar/importar JSON y aplicar a un proyecto.
-- **Asistente de IA** (con el contexto completo del proyecto): corrección, análisis (contradicciones, repeticiones, secciones débiles), sugerencias (títulos, miniaturas, hooks, descripción), generación parcial y de guion completo, con respuesta en streaming.
+- **Asistente de IA** (con el contexto del proyecto): corrección, análisis (contradicciones, repeticiones, secciones débiles), sugerencias (títulos, miniaturas, hooks, descripción), generación parcial y de guion completo, con respuesta en streaming.
 - **Variables del canal**: nombre, saludo, público, estilo, qué evitar y duración promedio; la IA las usa automáticamente.
 - **Biblioteca de prompts** reutilizables.
 - **Historial de versiones**: guardar, restaurar y comparar.
@@ -26,7 +26,7 @@ Aplicación web (Flutter) para que creadores de contenido de YouTube planifiquen
 
 ### Desde 0.2.0
 
-- **Dashboard (Inicio)**: pantalla principal con estadísticas globales, carrusel de sugerencias de IA, consejos contextuales, acceso rápido a Ollama, respaldo JSON, proyectos recientes, gráfico de estados y rankings de estructuras y prompts.
+- **Dashboard (Inicio)**: pantalla principal con estadísticas globales, carrusel de sugerencias de IA, consejos contextuales, acceso rápido al proveedor de IA, respaldo JSON, proyectos recientes, gráfico de estados y rankings de estructuras y prompts.
 - **Sugerencias**: sección dedicada que propone ideas de proyectos, estructuras y prompts a partir de tus guiones; generación por categoría (5 en 5), **Sugerir de todo** (3 de cada una), aplicar o descartar, y **Limpiar todo**.
 - **Estructuras con IA**: genera plantillas de secciones desde la vista Estructuras.
 - **Notas Markdown**: editor con vista previa en la pestaña Información del proyecto.
@@ -42,6 +42,11 @@ Aplicación web (Flutter) para que creadores de contenido de YouTube planifiquen
 - **Fecha estimada de lanzamiento**: asigna y edita la fecha desde la pestaña Información de cada proyecto.
 - **Tres modos de vista en Proyectos**: Lista (grid o filas), Kanban y Calendario, con la preferencia guardada automáticamente.
 
+### Actual
+
+- **Proveedores de IA**: Ollama, DeepSeek, The Hive, OpenAI y Claude. Cada uno muestra solo su clave, su versión de API (v1 o v3) y su URL base.
+- **Generar guion completo**: en un proyecto, Asistente IA → Generación abre un paso con un prompt y una estructura. La estructura puede ser las secciones actuales del proyecto, ninguna, o una plantilla guardada. La plantilla es opcional. Si escribes un prompt, el guion se crea desde cero con ese texto; el contenido ya escrito en las secciones no se envía al modelo.
+
 ## Stack
 
 | Capa | Tecnología |
@@ -49,7 +54,7 @@ Aplicación web (Flutter) para que creadores de contenido de YouTube planifiquen
 | UI | Flutter Web + Material 3 |
 | Estado | GetX (`Obx`) |
 | Persistencia | Hive CE (IndexedDB en web) |
-| IA | Ollama local vía HTTP (`/api/tags`, `/api/chat` streaming) |
+| IA | Ollama local (`/api/tags`, `/api/chat`) o chat compatible con OpenAI (DeepSeek, The Hive, OpenAI y Claude) |
 | Arquitectura | Feature First (`lib/ui/features/*`) |
 
 ## Desarrollo
@@ -60,7 +65,25 @@ dart run build_runner build   # regenerar adapters de Hive si cambian los modelo
 flutter run -d chrome
 ```
 
-## Configurar Ollama
+## Configurar la inteligencia artificial
+
+En **Ajustes → Inteligencia artificial** (o en el panel del inicio) elige un proveedor. Solo se muestran los campos de ese proveedor.
+
+| Proveedor | Qué configurar | URL base inicial |
+| --- | --- | --- |
+| Ollama | URL del servidor | `http://localhost:11434` |
+| DeepSeek | Clave de API, versión v1 o v3 y URL base | `https://api.deepseek.com/v1` |
+| The Hive | Clave de API, versión v1 o v3 y URL base | `https://api-cdn.thehive.ai/api/v3` |
+| OpenAI | Clave de API, versión v1 o v3 y URL base | `https://api.openai.com/v1` |
+| Claude | Clave de API, versión v1 o v3 y URL base | `https://api.anthropic.com/v1` |
+
+Pulsa **Probar conexión** y elige el modelo predeterminado. Si el servidor no lista modelos, la app carga un catálogo documentado y puedes escribir otro identificador en **Modelo personalizado**. The Hive también admite la región Virginia: `https://api-va1.thehive.ai/api/v3`.
+
+Con la app servida por Docker, el navegador no llama a DeepSeek, The Hive, OpenAI ni Claude de forma directa: Nginx reenvía esas rutas (`/llm-proxy/...`) para evitar el bloqueo CORS. Un dominio distinto al documentado puede quedar bloqueado. En GitHub Pages ese proxy no existe.
+
+El control **Thinking** activa el razonamiento en Ollama y lo envía como `reasoning_effort` a DeepSeek, The Hive y OpenAI. Claude razona de forma adaptativa en su API.
+
+### Ollama
 
 1. Instala Ollama y descarga al menos un modelo, por ejemplo:
 
@@ -75,21 +98,24 @@ ollama pull llama3.2
 OLLAMA_ORIGINS="*" ollama serve
 ```
 
-3. En **Ajustes → Inteligencia artificial**, configura la URL (por defecto `http://localhost:11434`), prueba la conexión y elige el modelo predeterminado.
+3. Elige **Ollama**, deja la URL en `http://localhost:11434`, prueba la conexión y selecciona el modelo.
 
-### Limitación importante con GitHub Pages (HTTPS)
+### Limitación con GitHub Pages
 
-GitHub Pages sirve la app por **HTTPS**, mientras que Ollama escucha en **HTTP** (`http://localhost:11434`). Los navegadores bloquean las peticiones HTTPS → HTTP (*mixed content*), por lo que en la versión publicada la IA puede no conectarse directamente. Opciones:
+GitHub Pages publica la app por HTTPS y no incluye el proxy de Nginx.
 
-- **Recomendado**: ejecutar la app en local (`flutter run -d chrome`, Docker o servir `build/web`); el resto de funciones de la versión de GitHub Pages funcionan sin Ollama.
-- Exponer Ollama detrás de un proxy/túnel HTTPS local (por ejemplo Caddy, nginx o un túnel) y usar esa URL en Ajustes.
-- En algunos navegadores se puede permitir contenido inseguro para el sitio (configuración del sitio → "Insecure content" → Allow).
+- Ollama en `http://localhost:11434` queda bloqueado porque el navegador no permite una página HTTPS llamar a HTTP.
+- DeepSeek, The Hive, OpenAI y Claude se envían a `/llm-proxy/...`. Esa ruta existe cuando la app corre con Docker.
 
-En todos los casos, recuerda lanzar Ollama con `OLLAMA_ORIGINS` incluyendo el origen de la app (o `*`).
+Para usar un modelo, levanta la app con Docker. El sitio publicado sigue sirviendo para editar proyectos, estructuras y el resto de funciones.
+
+Si quieres Ollama desde un origen HTTPS, exponlo detrás de un proxy HTTPS y pon esa URL en Ajustes. Lanza Ollama con `OLLAMA_ORIGINS` igual al origen de la app, o `*`.
 
 ## Docker (app + Ollama local)
 
-Puedes levantar Script Lab y Ollama en tu máquina con Docker Compose. La app se sirve por **HTTP** en el puerto 8080 y Ollama en el 11434, así el navegador puede conectarse sin problemas de mixed content.
+Puedes levantar Script Lab y Ollama en tu máquina con Docker Compose. La app se sirve por **HTTP** en el puerto 8080 y Ollama en el 11434. Ese mismo servidor reenvía DeepSeek, The Hive, OpenAI y Claude.
+
+Si el puerto 11434 ya lo usa un Ollama instalado en la máquina, Compose no puede arrancar. Detén ese proceso o cambia `OLLAMA_PORT` en `.env` y la URL de Ollama en Ajustes para que coincidan.
 
 ### Requisitos
 
@@ -146,7 +172,8 @@ docker compose --profile setup run --rm ollama-models
 
 ### Notas
 
-- Los **datos de proyectos** siguen guardándose en el navegador (IndexedDB), no en Docker.
+- Los **datos de proyectos** y las **claves de API** se guardan en el navegador (IndexedDB), no en Docker.
+- Tras reconstruir la imagen, recarga la página con fuerza (Cmd+Shift+R) si Chrome sigue mostrando la versión anterior.
 - En **Mac con Apple Silicon**, Ollama en Docker suele usar CPU; para más rendimiento puedes instalar Ollama nativo en el host y usar solo el contenedor `script-lab`.
 - La primera descarga de modelos puede tardar varios minutos según tu conexión.
 

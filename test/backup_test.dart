@@ -226,6 +226,12 @@ void main() {
       expect(settings.hiveApiVersion, LlmProvider.v3);
       expect(settings.deepseekApiKey, isEmpty);
       expect(settings.hiveApiKey, isEmpty);
+      expect(settings.openaiApiVersion, LlmProvider.v1);
+      expect(settings.claudeApiVersion, LlmProvider.v1);
+      expect(settings.openaiApiKey, isEmpty);
+      expect(settings.claudeApiKey, isEmpty);
+      expect(settings.openaiBaseUrl, LlmProvider.openaiV1Url);
+      expect(settings.claudeBaseUrl, LlmProvider.claudeV1Url);
     });
 
     test('La clave y la URL base externas sobreviven al respaldo', () {
@@ -237,6 +243,12 @@ void main() {
         deepseekApiKey: 'clave-deepseek',
         deepseekBaseUrl: LlmProvider.deepseekV1Url,
         deepseekApiVersion: LlmProvider.v1,
+        openaiApiKey: 'clave-openai',
+        openaiBaseUrl: LlmProvider.openaiV1Url,
+        openaiApiVersion: LlmProvider.v1,
+        claudeApiKey: 'clave-claude',
+        claudeBaseUrl: LlmProvider.claudeV1Url,
+        claudeApiVersion: LlmProvider.v1,
       );
       final restored =
           AppSettings.fromBackupJson(roundTrip(settings.toBackupJson()));
@@ -246,6 +258,10 @@ void main() {
       expect(restored.hiveApiVersion, LlmProvider.v3);
       expect(restored.deepseekApiKey, 'clave-deepseek');
       expect(restored.deepseekBaseUrl, LlmProvider.deepseekV1Url);
+      expect(restored.openaiApiKey, 'clave-openai');
+      expect(restored.openaiBaseUrl, LlmProvider.openaiV1Url);
+      expect(restored.claudeApiKey, 'clave-claude');
+      expect(restored.claudeBaseUrl, LlmProvider.claudeV1Url);
     });
   });
 }

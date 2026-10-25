@@ -18,7 +18,7 @@ import 'http/create_client_io.dart'
     if (dart.library.js_interop) 'http/create_client_web.dart';
 import 'settings_service.dart';
 
-/// Cliente de chat compatible con OpenAI para DeepSeek y The Hive.
+/// Cliente de chat compatible con OpenAI para los proveedores externos.
 class ExternalLlmService {
   final status = OllamaStatus.unknown.obs;
   final models = <String>[].obs;
@@ -45,7 +45,7 @@ class ExternalLlmService {
       final response = await client
           .get(
             _requestUri(endpoint.models),
-            headers: _headers(apiKey, stream: false),
+            headers: _headers(settings, apiKey, stream: false),
           )
           .timeout(const Duration(seconds: 20));
       if (response.statusCode == 404 || response.statusCode == 405) {
@@ -138,7 +138,7 @@ class ExternalLlmService {
     final client = createHttpClient();
     try {
       final request = http.Request('POST', _requestUri(endpoint.chatCompletions))
-        ..headers.addAll(_headers(apiKey, stream: true))
+        ..headers.addAll(_headers(settings, apiKey, stream: true))
         ..body = jsonEncode(body);
       final response = await client.send(request);
       if (response.statusCode != 200) {
@@ -165,29 +165,28 @@ class ExternalLlmService {
   }
 
   ExternalLlmEndpoint _endpoint(AppSettings settings) => ExternalLlmEndpoint(
-        baseUrl: settings.llmProvider == LlmProvider.hive
-            ? settings.hiveBaseUrl
-            : settings.deepseekBaseUrl,
-        apiVersion: settings.llmProvider == LlmProvider.hive
-            ? settings.hiveApiVersion
-            : settings.deepseekApiVersion,
+        baseUrl: settings.baseUrlFor(settings.llmProvider),
+        apiVersion: settings.apiVersionFor(settings.llmProvider),
         provider: settings.llmProvider,
       );
 
-  String _apiKey(AppSettings settings) {
-    final raw = settings.llmProvider == LlmProvider.hive
-        ? settings.hiveApiKey
-        : settings.deepseekApiKey;
-    return raw.trim();
-  }
+  String _apiKey(AppSettings settings) =>
+      settings.apiKeyFor(settings.llmProvider).trim();
 
   Uri _requestUri(Uri uri) =>
       LlmWebProxy.rewrite(uri, useProxy: kIsWeb);
 
-  Map<String, String> _headers(String apiKey, {required bool stream}) => {
+  Map<String, String> _headers(
+    AppSettings settings,
+    String apiKey, {
+    required bool stream,
+  }) =>
+      {
         'Authorization': 'Bearer $apiKey',
         'Content-Type': 'application/json',
         'Accept': stream ? 'text/event-stream' : 'application/json',
+        if (settings.llmProvider == LlmProvider.claude)
+          'anthropic-version': LlmProvider.claudeVersionHeader,
       };
 
   void _assignModels(List<String> ids, String selected) {
@@ -254,7 +253,7 @@ class ExternalLlmService {
         raw.contains('XMLHttpRequest') ||
         raw.contains('ClientException')) {
       return 'No se pudo contactar el servidor. Revisa la URL base. '
-          'En el navegador, DeepSeek y The Hive pasan por el servidor de la app; '
+          'En el navegador, los dominios documentados pasan por el servidor de la app; '
           'otro dominio puede quedar bloqueado.';
     }
     return raw;

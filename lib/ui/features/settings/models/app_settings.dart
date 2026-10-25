@@ -8,7 +8,7 @@ class AppSettings extends HiveObject {
   String ollamaUrl;
   String defaultModel;
 
-  /// ollama | deepseek | hive
+  /// ollama | deepseek | hive | openai | claude
   String llmProvider;
   String deepseekApiKey;
   String deepseekBaseUrl;
@@ -20,6 +20,16 @@ class AppSettings extends HiveObject {
 
   /// v1 | v3
   String hiveApiVersion;
+  String openaiApiKey;
+  String openaiBaseUrl;
+
+  /// v1 | v3
+  String openaiApiVersion;
+  String claudeApiKey;
+  String claudeBaseUrl;
+
+  /// v1 | v3
+  String claudeApiVersion;
 
   /// Modo thinking de Ollama: off | on | low | medium | high
   String thinkMode;
@@ -50,6 +60,12 @@ class AppSettings extends HiveObject {
     this.hiveApiKey = '',
     this.hiveBaseUrl = LlmProvider.hiveV3Url,
     this.hiveApiVersion = LlmProvider.v3,
+    this.openaiApiKey = '',
+    this.openaiBaseUrl = LlmProvider.openaiV1Url,
+    this.openaiApiVersion = LlmProvider.v1,
+    this.claudeApiKey = '',
+    this.claudeBaseUrl = LlmProvider.claudeV1Url,
+    this.claudeApiVersion = LlmProvider.v1,
     this.thinkMode = AiThinkMode.off,
     this.themeMode = 'system',
     this.wordsPerMinute = AppConstants.defaultWordsPerMinute,
@@ -69,6 +85,12 @@ class AppSettings extends HiveObject {
         'hiveApiKey': hiveApiKey,
         'hiveBaseUrl': hiveBaseUrl,
         'hiveApiVersion': hiveApiVersion,
+        'openaiApiKey': openaiApiKey,
+        'openaiBaseUrl': openaiBaseUrl,
+        'openaiApiVersion': openaiApiVersion,
+        'claudeApiKey': claudeApiKey,
+        'claudeBaseUrl': claudeBaseUrl,
+        'claudeApiVersion': claudeApiVersion,
         'thinkMode': thinkMode,
         'themeMode': themeMode,
         'wordsPerMinute': wordsPerMinute,
@@ -91,6 +113,16 @@ class AppSettings extends HiveObject {
         hiveApiKey: (json['hiveApiKey'] as String?) ?? '',
         hiveBaseUrl: (json['hiveBaseUrl'] as String?) ?? LlmProvider.hiveV3Url,
         hiveApiVersion: (json['hiveApiVersion'] as String?) ?? LlmProvider.v3,
+        openaiApiKey: (json['openaiApiKey'] as String?) ?? '',
+        openaiBaseUrl:
+            (json['openaiBaseUrl'] as String?) ?? LlmProvider.openaiV1Url,
+        openaiApiVersion:
+            (json['openaiApiVersion'] as String?) ?? LlmProvider.v1,
+        claudeApiKey: (json['claudeApiKey'] as String?) ?? '',
+        claudeBaseUrl:
+            (json['claudeBaseUrl'] as String?) ?? LlmProvider.claudeV1Url,
+        claudeApiVersion:
+            (json['claudeApiVersion'] as String?) ?? LlmProvider.v1,
         thinkMode: (json['thinkMode'] as String?) ?? AiThinkMode.off,
         themeMode: (json['themeMode'] as String?) ?? 'system',
         wordsPerMinute: (json['wordsPerMinute'] as num?)?.toInt() ??
@@ -101,4 +133,25 @@ class AppSettings extends HiveObject {
         projectsSectionMode:
             (json['projectsSectionMode'] as String?) ?? 'list',
       );
+
+  String baseUrlFor(String provider) => switch (provider) {
+        LlmProvider.hive => hiveBaseUrl,
+        LlmProvider.openai => openaiBaseUrl,
+        LlmProvider.claude => claudeBaseUrl,
+        _ => deepseekBaseUrl,
+      };
+
+  String apiKeyFor(String provider) => switch (provider) {
+        LlmProvider.hive => hiveApiKey,
+        LlmProvider.openai => openaiApiKey,
+        LlmProvider.claude => claudeApiKey,
+        _ => deepseekApiKey,
+      };
+
+  String apiVersionFor(String provider) => switch (provider) {
+        LlmProvider.hive => hiveApiVersion,
+        LlmProvider.openai => openaiApiVersion,
+        LlmProvider.claude => claudeApiVersion,
+        _ => deepseekApiVersion,
+      };
 }

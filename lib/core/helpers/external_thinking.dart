@@ -8,7 +8,12 @@ class ExternalThinking {
     required bool thinking,
     required String mode,
   }) {
+    if (provider == LlmProvider.claude) return {};
     final enabled = thinking && mode != AiThinkMode.off;
+    if (provider == LlmProvider.openai) {
+      if (!enabled) return {};
+      return {'reasoning_effort': _openAiEffort(mode)};
+    }
     final effort = enabled ? _effort(mode) : 'none';
     if (provider == LlmProvider.hive) {
       return {'reasoning_effort': effort};
@@ -23,5 +28,11 @@ class ExternalThinking {
         AiThinkMode.low => 'low',
         AiThinkMode.medium || AiThinkMode.high || AiThinkMode.on => 'high',
         _ => 'none',
+      };
+
+  static String _openAiEffort(String mode) => switch (mode) {
+        AiThinkMode.low => 'low',
+        AiThinkMode.medium => 'medium',
+        _ => 'high',
       };
 }

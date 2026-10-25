@@ -119,7 +119,7 @@ types:
         index: 3
   AppSettings:
     typeId: 7
-    nextIndex: 16
+    nextIndex: 22
     fields:
       ollamaUrl:
         index: 0
@@ -153,6 +153,18 @@ types:
         index: 14
       hiveApiVersion:
         index: 15
+      openaiApiKey:
+        index: 16
+      openaiBaseUrl:
+        index: 17
+      openaiApiVersion:
+        index: 18
+      claudeApiKey:
+        index: 19
+      claudeBaseUrl:
+        index: 20
+      claudeApiVersion:
+        index: 21
   ChannelVariables:
     typeId: 8
     nextIndex: 6
