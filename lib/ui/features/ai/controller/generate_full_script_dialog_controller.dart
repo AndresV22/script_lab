@@ -5,13 +5,22 @@ import '../models/generate_full_script_request.dart';
 
 /// Estado del diálogo que pide el prompt y la plantilla del guion completo.
 class GenerateFullScriptDialogController extends GetxController {
+  GenerateFullScriptDialogController({
+    this.initialPrompt = '',
+    this.initialStructureId = GenerateFullScriptRequest.projectSections,
+  });
+
+  final String initialPrompt;
+  final String initialStructureId;
   late final TextEditingController promptCtrl;
-  final selectedStructureId = GenerateFullScriptRequest.projectSections.obs;
+  late final RxString selectedStructureId;
 
   @override
   void onInit() {
     super.onInit();
-    promptCtrl = TextEditingController();
+    promptCtrl = TextEditingController(text: initialPrompt)
+      ..selection = TextSelection.collapsed(offset: initialPrompt.length);
+    selectedStructureId = initialStructureId.obs;
   }
 
   void selectStructure(String? structureId) {

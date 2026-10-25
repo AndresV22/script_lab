@@ -10,8 +10,14 @@ import '../../models/generate_full_script_request.dart';
 class GenerateFullScriptDialog extends StatelessWidget {
   const GenerateFullScriptDialog({super.key});
 
-  static Future<GenerateFullScriptRequest?> show() {
-    Get.put(GenerateFullScriptDialogController());
+  static Future<GenerateFullScriptRequest?> show({
+    String initialPrompt = '',
+    String initialStructureId = GenerateFullScriptRequest.projectSections,
+  }) {
+    Get.put(GenerateFullScriptDialogController(
+      initialPrompt: initialPrompt,
+      initialStructureId: initialStructureId,
+    ));
     return Get.dialog<GenerateFullScriptRequest>(
       const GenerateFullScriptDialog(),
     ).whenComplete(Get.delete<GenerateFullScriptDialogController>);
@@ -50,9 +56,9 @@ class GenerateFullScriptDialog extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Text(
-                'El prompt guía el guion. Puedes seguir las secciones '
-                'actuales del proyecto, dejar la estructura libre o elegir '
-                'una plantilla guardada.',
+                'El prompt se guarda para la próxima generación. '
+                'Puedes seguir las secciones actuales del proyecto, '
+                'dejar la estructura libre o elegir una plantilla guardada.',
                 style: TextStyle(fontSize: 13, color: scheme.onSurfaceVariant),
               ),
               const SizedBox(height: 16),

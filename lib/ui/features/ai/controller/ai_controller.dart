@@ -19,7 +19,10 @@ import '../services/ai_service.dart';
 import '../views/diff_review_view.dart';
 import '../../structures/services/structure_service.dart';
 import '../views/widgets/ai_instructions_dialog.dart';
+import '../models/generate_full_script_request.dart';
+import '../models/generate_section_request.dart';
 import '../views/widgets/generate_full_script_dialog.dart';
+import '../views/widgets/generate_section_dialog.dart';
 import '../views/widgets/ai_result_dialog.dart';
 import '../views/widgets/llm_unavailable_dialog.dart';
 import '../views/widgets/model_picker_dialog.dart';
@@ -36,6 +39,12 @@ class AiController extends GetxController {
 
   ScriptSection? targetSection;
   StreamSubscription<String>? _subscription;
+
+  GenerateFullScriptRequest? _lastFullRequest;
+  String? _lastSectionId;
+  final _sectionPrompts = <String, String>{};
+  final savedPrompt = ''.obs;
+  final canRegenerate = false.obs;
 
   Project get project => detail.project;
 
@@ -55,6 +64,8 @@ class AiController extends GetxController {
     currentTask.value = task;
     output.value = '';
     error.value = '';
+    canRegenerate.value = false;
+    savedPrompt.value = '';
 
     if (selectedModel.value.isEmpty) {
       _requestModel(onReady: () => _start(prompt));
@@ -153,9 +164,32 @@ class AiController extends GetxController {
     unawaited(_openGenerateFull());
   }
 
+  void regenerate() {
+    switch (currentTask.value) {
+      case AiTask.generateFull:
+        final request = _lastFullRequest;
+        if (request == null) return;
+        _executeFull(request);
+      case AiTask.generateSection:
+        unawaited(_replaySection());
+      default:
+        return;
+    }
+  }
+
   Future<void> _openGenerateFull() async {
-    final request = await GenerateFullScriptDialog.show();
+    final previous = _lastFullRequest;
+    final request = await GenerateFullScriptDialog.show(
+      initialPrompt: previous?.prompt ?? '',
+      initialStructureId: previous?.structureId ??
+          GenerateFullScriptRequest.projectSections,
+    );
     if (request == null) return;
+    _executeFull(request);
+  }
+
+  void _executeFull(GenerateFullScriptRequest request) {
+    _lastFullRequest = request;
     final structure = request.useProjectSections
         ? null
         : StructureService.to.structures
@@ -169,13 +203,64 @@ class AiController extends GetxController {
         useProjectSections: request.useProjectSections,
       ),
     );
+    savedPrompt.value = request.prompt;
+    canRegenerate.value = true;
   }
 
-  void runGenerateSection(ScriptSection section) => _run(
-        AiTask.generateSection,
-        AiService.generateSectionPrompt(project, section),
-        section: section,
+  void runGenerateSection(ScriptSection section) {
+    unawaited(_openGenerateSection(section));
+  }
+
+  Future<void> _openGenerateSection(
+    ScriptSection section, {
+    bool showResult = false,
+  }) async {
+    final request = await GenerateSectionDialog.show(
+      sectionTitle: section.title,
+      initialPrompt: _sectionPrompts[section.id] ?? '',
+    );
+    if (request == null) return;
+    _executeSection(section, request);
+    if (showResult) {
+      await Get.dialog(const AiResultDialog(), barrierDismissible: false);
+    }
+  }
+
+  void _executeSection(ScriptSection section, GenerateSectionRequest request) {
+    _sectionPrompts[section.id] = request.prompt;
+    _lastSectionId = section.id;
+    _run(
+      AiTask.generateSection,
+      AiService.generateSectionPrompt(
+        project,
+        section,
+        extra: request.prompt,
+      ),
+      section: section,
+    );
+    savedPrompt.value = request.prompt;
+    canRegenerate.value = true;
+  }
+
+  Future<void> _replaySection() async {
+    final sectionId = _lastSectionId;
+    if (sectionId == null) return;
+    final section =
+        project.sections.firstWhereOrNull((item) => item.id == sectionId);
+    if (section == null) {
+      Get.snackbar(
+        'Asistente IA',
+        'La sección ya no está en el proyecto.',
+        snackPosition: SnackPosition.BOTTOM,
+        maxWidth: 380,
       );
+      return;
+    }
+    _executeSection(
+      section,
+      GenerateSectionRequest(prompt: _sectionPrompts[sectionId] ?? ''),
+    );
+  }
 
   void runSectionCorrection(ScriptSection section) => _run(
         AiTask.sectionCorrection,
@@ -246,8 +331,7 @@ class AiController extends GetxController {
   // ----- Diálogos desde el editor de guion -----
 
   void generateSectionDialog(ScriptSection section) {
-    runGenerateSection(section);
-    Get.dialog(const AiResultDialog(), barrierDismissible: false);
+    unawaited(_openGenerateSection(section, showResult: true));
   }
 
   void correctSectionDialog(ScriptSection section) {
@@ -382,6 +466,10 @@ class AiController extends GetxController {
       proposed: cleanedOutput,
       onApply: applyFullScript,
     );
+  }
+
+  void applyGeneratedFullScript() {
+    unawaited(applyFullScript(cleanedOutput));
   }
 
   /// Aplica un guion con encabezados "## Sección" al proyecto,

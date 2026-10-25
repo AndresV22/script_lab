@@ -188,13 +188,35 @@ Devuelve ÚNICAMENTE la descripción, sin títulos ni comentarios.${_extraBlock(
 
   // ----- Generación -----
 
-  static String generateSectionPrompt(Project p, ScriptSection s) => '''
+  static String generateSectionPrompt(
+    Project p,
+    ScriptSection s, {
+    String extra = '',
+  }) {
+    final guidance = extra.trim();
+    final notes = s.description.trim().isEmpty
+        ? ''
+        : 'Notas de la sección: ${s.description.trim()}\n';
+    if (guidance.isNotEmpty) {
+      return '''
+${_projectContext(p, includeScript: false)}
+
+Sección: "${s.title}"
+$notes
+Indicaciones del creador (definen el texto):
+$guidance
+
+Escribe un texto nuevo desde cero para esta sección, listo para ser narrado en voz alta.
+Devuelve ÚNICAMENTE el texto de la sección, sin encabezados ni comentarios.''';
+    }
+    return '''
 ${_projectContext(p)}
 
 Escribe el contenido de la sección "${s.title}" del guion.
-${s.description.trim().isNotEmpty ? 'Indicaciones del creador para esta sección (respétalas): ${s.description.trim()}\n' : ''}Debe integrarse con naturalidad con el resto del guion, en el estilo del creador,
+${notes}Debe integrarse con naturalidad con el resto del guion, en el estilo del creador,
 listo para ser narrado en voz alta.
 Devuelve ÚNICAMENTE el texto de la sección, sin encabezados ni comentarios.''';
+  }
 
   static String generateFullPrompt(
     Project p, {

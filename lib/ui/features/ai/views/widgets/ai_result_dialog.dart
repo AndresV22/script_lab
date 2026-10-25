@@ -10,6 +10,8 @@ import 'markdown_output.dart';
 class AiResultDialog extends StatelessWidget {
   const AiResultDialog({super.key});
 
+  void _regenerate() => Get.find<AiController>().regenerate();
+
   @override
   Widget build(BuildContext context) {
     final controller = Get.find<AiController>();
@@ -56,6 +58,39 @@ class AiResultDialog extends StatelessWidget {
               ),
             ),
             const Divider(),
+            Obx(() {
+              final prompt = controller.savedPrompt.value;
+              if (prompt.isEmpty) return const SizedBox.shrink();
+              return Padding(
+                padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text(
+                      'Prompt usado',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: scheme.onSurfaceVariant,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    ConstrainedBox(
+                      constraints: const BoxConstraints(maxHeight: 72),
+                      child: SingleChildScrollView(
+                        child: SelectableText(
+                          prompt,
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: scheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }),
             Flexible(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.all(20),
@@ -83,9 +118,17 @@ class AiResultDialog extends StatelessWidget {
                 final running = controller.isRunning.value;
                 final hasOutput = controller.output.value.isNotEmpty;
                 final task = controller.currentTask.value;
+                final showRegenerate =
+                    controller.canRegenerate.value && !running;
                 return Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
                   children: [
+                    if (showRegenerate)
+                      OutlinedButton.icon(
+                        onPressed: _regenerate,
+                        icon: const Icon(Icons.refresh, size: 16),
+                        label: const Text('Generar de nuevo'),
+                      ),
+                    const Spacer(),
                     if (running)
                       OutlinedButton.icon(
                         onPressed: controller.cancel,

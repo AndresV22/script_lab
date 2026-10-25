@@ -166,6 +166,25 @@ Esto es el cierre.
       expect(prompt, isNot(contains('Plantilla de estructura')));
     });
 
+    test('la sección con prompt se escribe desde cero', () {
+      final project = Project(id: 'p1', topic: 'Relojes');
+      final section = ScriptSection(
+        id: 's1',
+        title: 'Precio',
+        content: 'Texto ya escrito que no debe usarse.',
+        description: 'Mencionar la garantía',
+      );
+      final prompt = AiService.generateSectionPrompt(
+        project,
+        section,
+        extra: 'Compara tres modelos',
+      );
+      expect(prompt, contains('Compara tres modelos'));
+      expect(prompt, contains('Mencionar la garantía'));
+      expect(prompt, contains('desde cero'));
+      expect(prompt, isNot(contains('Texto ya escrito que no debe usarse.')));
+    });
+
     test('sin plantilla el prompt del creador define las secciones', () {
       final project = Project(id: 'p1', topic: 'Relojes');
       project.sections.add(ScriptSection(

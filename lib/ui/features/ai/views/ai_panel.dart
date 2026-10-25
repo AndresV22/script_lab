@@ -452,6 +452,39 @@ class _OutputArea extends StatelessWidget {
             );
           }),
         ),
+        Obx(() {
+          final prompt = controller.savedPrompt.value;
+          if (prompt.isEmpty) return const SizedBox.shrink();
+          return Padding(
+            padding: const EdgeInsets.fromLTRB(24, 12, 24, 0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(
+                  'Prompt usado',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: scheme.onSurfaceVariant,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                ConstrainedBox(
+                  constraints: const BoxConstraints(maxHeight: 88),
+                  child: SingleChildScrollView(
+                    child: SelectableText(
+                      prompt,
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: scheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          );
+        }),
         const SizedBox(height: 12),
         Expanded(
           child: Obx(() {
@@ -486,19 +519,38 @@ class _OutputArea extends StatelessWidget {
         Padding(
           padding: const EdgeInsets.all(12),
           child: Obx(() {
-            final hasOutput = controller.output.value.isNotEmpty &&
-                !controller.isRunning.value;
-            if (!hasOutput) return const SizedBox(height: 36);
+            final running = controller.isRunning.value;
+            final hasOutput = controller.output.value.isNotEmpty && !running;
+            final showRegenerate = controller.canRegenerate.value && !running;
+            if (!hasOutput && !showRegenerate) return const SizedBox(height: 36);
             final task = controller.currentTask.value;
             return Row(
-              mainAxisAlignment: MainAxisAlignment.end,
               children: [
-                TextButton(
-                  onPressed: controller.copyOutput,
-                  child: const Text('Copiar'),
-                ),
-                const SizedBox(width: 8),
-                switch (task) {
+                if (showRegenerate)
+                  OutlinedButton.icon(
+                    onPressed: controller.regenerate,
+                    icon: const Icon(Icons.refresh, size: 16),
+                    label: const Text('Generar de nuevo'),
+                  ),
+                const Spacer(),
+                if (hasOutput) ...[
+                  TextButton(
+                    onPressed: controller.copyOutput,
+                    child: const Text('Copiar'),
+                  ),
+                  const SizedBox(width: 8),
+                  _outputAction(controller, task),
+                ],
+              ],
+            );
+          }),
+        ),
+      ],
+    );
+  }
+
+  Widget _outputAction(AiController controller, AiTask? task) {
+    return switch (task) {
                   AiTask.correction => FilledButton(
                       onPressed: controller.reviewFullCorrection,
                       child: const Text('Revisar diferencias'),
@@ -561,18 +613,11 @@ class _OutputArea extends StatelessWidget {
                       onPressed: controller.insertIntoTargetSection,
                       child: const Text('Insertar en sección'),
                     ),
-                  AiTask.generateFull => FilledButton(
-                      onPressed: () => controller
-                          .applyFullScript(controller.cleanedOutput),
-                      child: const Text('Aplicar al guion'),
-                    ),
-                  _ => const SizedBox.shrink(),
-                },
-              ],
-            );
-          }),
+      AiTask.generateFull => FilledButton(
+          onPressed: controller.applyGeneratedFullScript,
+          child: const Text('Aplicar al guion'),
         ),
-      ],
-    );
+      _ => const SizedBox.shrink(),
+    };
   }
 }
